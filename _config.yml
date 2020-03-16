@@ -80,5 +80,5 @@ theme: next
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repo: https://github.com/ggandycong/ggandycong.github.io.git
+  repo: git@github.com:ggandycong/ggandycong.github.io.git
   branch: master
