@@ -120,7 +120,7 @@ linux的域名解析缓存默认是关闭，需要启用nscd 服务，才会有d
 
 使用特定IP地址访问http资源，修改hosts文件是最简单但不是最好的办法， 如果使用libcurl库，可以使用CURLOPT_RESOLVE选项完成此功能。
 
-# 4、 参考
+# 4、参考
 
 （1）官方CURLOPT_RESOLVE选项介绍：https://curl.haxx.se/libcurl/c/CURLOPT_RESOLVE.html
 

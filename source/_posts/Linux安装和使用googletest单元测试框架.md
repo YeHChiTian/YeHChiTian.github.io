@@ -65,6 +65,8 @@ googletest项目地址：https://github.com/google/googletest
 
 直接编译googletest/src/gtest-all.cc文件再打包为静态库。（-pthread 可知gtest是多线程实现）
 
+**注意，如果库要移植，需要添加编译选项-fPIC**
+
 ```shell
  g++ -isystem ${GTEST_DIR}/include -I${GTEST_DIR} \
         -pthread -c ${GTEST_DIR}/src/gtest-all.cc
