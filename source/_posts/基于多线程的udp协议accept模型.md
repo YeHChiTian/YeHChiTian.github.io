@@ -441,7 +441,7 @@ int main(int argc, const char *argv[]) {
 * 主线程收到创建线程与用户A的描述符是5，对应epoll是6， 可见用户A后续消息都准确投递到fd5
 * 线程与用户B描述符7，，对应epoll是6, 可见用户B后续消息都准确投递到fd7
 
-![图4-1](./基于多线程的udp协议accept模型/图4-1 运行结果.png)
+![图4-1](./基于多线程的udp协议accept模型/图4-1运行结果.png)
 
 查看描述符对应的关系如下：
 
@@ -449,7 +449,7 @@ int main(int argc, const char *argv[]) {
 * 描述符fd 5已经绑定了localhost:12345(用户A)
 * 描述符fd 7已经绑定了localhost:12346(用户B)
 
-![图4-2](./基于多线程的udp协议accept模型/图 4-2 连接对应关系.png)
+![图4-2](./基于多线程的udp协议accept模型/图4-2连接对应关系.png)
 
 **可知，通过验证，确定此方案可行**。
 
