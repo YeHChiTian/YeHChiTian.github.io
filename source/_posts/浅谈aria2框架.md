@@ -13,7 +13,7 @@ tags:
 
 
 
-# 1、aria2简单介绍
+# 一、aria2简单介绍
 
 * aria2是一个轻量级、支持多协议、命令行下载工具, 支持多种下载协议（有http/https,ftp,sftp, Bittorrent ,Metalink）下载工具。 aria2c可以通过rpc进行交互（支持json,xml格式），以下来自官方文档解释
 
@@ -30,7 +30,7 @@ tags:
 * aria2c主要开发是由一个日本程序员完成。
 * aria2的定位是一个轻量级的下载工具，导致aria2只是一个单线程的程序。
 
-# 2、aria2框架
+# 二、aria2框架
 
 aria2的框架非常类似于单核CPU在系统中处理任务。我们知道操作系统维护了一个任务队列，CPU轮询从这个任务队列中取出任务执行，当任务结束或者任务时间片到达的时候，CPU会保存当前任务，然后去执行下一个任务，一直不断轮询执行。任务可以有优先级，任务也可以产生新的任务，然后将新产生任务添加到任务队列等待下次运行。
 
@@ -57,7 +57,7 @@ command基本分为两类，一类是常规command(routineCommands), 每次都�
 
 
 
-# 3、框架优缺点（trade-off）
+# 三、框架优缺点（trade-off）
 
 **优点：**
 
@@ -79,7 +79,7 @@ command基本分为两类，一类是常规command(routineCommands), 每次都�
 
 
 
-# 4、 参考
+# 四、参考
 
 [官方文档](https://aria2.github.io/)
 

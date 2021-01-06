@@ -10,15 +10,15 @@ tags: valgrind
 
 >由于最近项目需要检测C/C++代码方面的内存。因此就研究了几个检测工具，最终确定了使用valgrind。本文主要介绍Valgrind的使用，在linux上以及在android native上检测内存。
 
-# 1、valgrind的概念原理以及使用
+# 一、valgrind的概念原理以及使用
 
 主要参考IBM上关于Valgrind使用介绍:[应用 Valgrind 发现 Linux 程序的内存问题](https://www.ibm.com/developerworks/cn/linux/l-cn-valgrind/)。在此不再叙述。
 
-# 2、 在linux上使用valgrind检测例子
+# 二、在linux上使用valgrind检测例子
 
 虽然这部分内容基本来自上面的文章，这里再做记录也是为了记录学习过程。
 
-## （1）在linux上编译最新valgrind
+## (1)在linux上编译最新valgrind
 
 1.在官方下载最新版本的valgrind:[官方最新valgrind版本](<http://www.valgrind.org/downloads/current.html>)
 
@@ -33,7 +33,7 @@ valgrind-3.15.0  （输出版本）
 
 ## (2) 在linux上使用valgrind测试例子
 
-### 1. 数组越界
+###  1. 数组越界
 
 程序: test1.c
 
@@ -242,7 +242,9 @@ int main(){
 ![图2-6](./使用valgrind工具检测内存/图2-6内存泄漏.png)
 
 <center>图2-6  内存泄漏类型检测结果</center>
-# 3、在android上使用valgrind检测
+
+
+# 三、在android上使用valgrind检测
 
 ## (1)交叉编译valgrind版本
 
@@ -252,7 +254,7 @@ int main(){
 
 以下已经安装了x86, arm版本。如下图3-1所示。（安装过程自行寻找资料）
 
-![图3-1](./使用valgrind工具检测内存/图3-1 交叉编译器.png)
+![图3-1](./使用valgrind工具检测内存/图3-1交叉编译器.png)
 
 <center>图3-1 android上交叉编译器</center>
 **编译valgrind脚本**
@@ -309,13 +311,13 @@ valgrind --tool=memcheck --leak-check=full  --show-leak-kinds=all  ls
 
 
 
-# 4、总结
+# 四、总结
 
 主要熟悉了valgrind工具使用， 本次使用该工具大部分时间花在将工具搬移到android中测试ndk中的c/c++代码。
 
 android不是所有平台都支持valgrind， 测试了很多版本，最终发现模拟器arm 4.1支持，踩了很多坑。
 
-# 5、参考
+# 五、参考
 
 1.[Valgrind Native 内存检测](https://aheadsnail.github.io/2019/07/20/Valgrind-Native-%E5%86%85%E5%AD%98%E6%A3%80%E6%B5%8B/)
 

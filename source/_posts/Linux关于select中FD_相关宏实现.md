@@ -17,7 +17,7 @@ tags:
 
 
 
-# 1、FD_四个宏介绍
+# 一、FD_四个宏介绍
 
 通过**select**文档，可以看到几个宏的相关声明（通过**man**命令查询文档）在**sys/select.h**文件，其主要是为select以及pselect两个多路IO服务。 而select使用**fd_set**数据结构管理描述符集合，那么将涉及另外问题，如何将一个描述符添加到**fd_set**集合或者从改集合删除，四个宏**FD_**就是来完成这个任务的。下面简单描述这四个宏。
 
@@ -57,7 +57,7 @@ SYNOPSIS
 
 ```
 
-# 2、FD_宏相关实现
+# 二、FD_宏相关实现
 
 在/usr/include/x86_64-linux-gnu/sys/select.h文件中查看FD_宏实现，其又依赖于**__FD\_**相关宏。
 
@@ -243,7 +243,7 @@ void (set)->fds_bits[__FD_ELT (d)] |= __FD_MASK (d)))
 
 
 
-# 3、总结
+# 三、总结
 
 * 为什么FD_相关宏实现使用了位数组？
 
@@ -275,7 +275,7 @@ SYNOPSIS
 
 
 
-# 4、完整源码
+# 四、完整源码
 
 头文件/usr/include/x86_64-linux-gnu/sys/select.h 
 

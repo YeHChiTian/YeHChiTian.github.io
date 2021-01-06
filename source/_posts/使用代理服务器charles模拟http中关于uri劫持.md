@@ -15,7 +15,7 @@ tags:
 
 **原理可以参考另外一篇:** [浅谈dns解析与劫持](https://andycong.top/2019/10/29/%E6%B5%85%E8%B0%88dns%E8%A7%A3%E6%9E%90%E4%B8%8E%E5%8A%AB%E6%8C%81/#more)
 
-# 1、配置环境
+# 一、配置环境
 
 ​	(1)下载charles 4.28, [官方下载地址](https://www.charlesproxy.com/download/) （此乃收费软件，免费使用的话，每半个小时中断一次而已）
 
@@ -35,7 +35,7 @@ note: [charles破解参考](https://blog.csdn.net/qq_25821067/article/details/79
 
 
 
-# 2、 charles劫持篡改http信息
+# 二、charles劫持篡改http信息
 
 （1）charles如果要劫持特定的uri以及篡改此http请求和响应信息， 需要经过简单的配置。打开**tools->Rewrite**
 
@@ -61,7 +61,7 @@ note: [charles破解参考](https://blog.csdn.net/qq_25821067/article/details/79
 
 ![图2-5](./使用代理服务器charles模拟http中关于uri劫持/2-5charles模拟劫持之后抓包.png)
 
-# 3、在charles配置抓取https包
+# 三、在charles配置抓取https包
 
 由于https具有一定加密，因此charles无法直接抓取https对应的包信息，需要安装证书以及简单配置，然后篡改https信息和http一致。
 
@@ -83,11 +83,11 @@ note: [charles破解参考](https://blog.csdn.net/qq_25821067/article/details/79
 
 (5)接下来想劫持篡改https信息，就跟操作http一样。
 
-# 4、 总结
+# 四、总结
 
 本文主要简单阐述了如何使用charles代理服务器抓取http包并且篡改包的信息。通过本次操作，更加熟悉charles工具以及对http协议更加了解，有效帮助测试了程序使用http协议被劫持之后的稳定性。
 
-# 5、 参考
+# 五、参考
 
 (1)[Windows下用Charles对Android抓包HTTPS](https://blog.csdn.net/ybdesire/article/details/80636248)
 

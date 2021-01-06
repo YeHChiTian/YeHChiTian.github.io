@@ -58,7 +58,7 @@ mkdir -p usr/local/lib/pkgconfig
 >
 > ./build-ndk-toolchain.sh
 
-![](./在linux上交叉编译nettle库/图2-2 脚本执行过程.png)
+![图2-2](./在linux上交叉编译nettle库/图2-2脚本执行过程.png)
 
 <center>图2-2 build-ndk-toolchain脚本执行过程 ndk下载中</center>
 
@@ -211,7 +211,7 @@ $ANDROID_HOME/build/tools/make_standalone_toolchain.py \
 
 2.执行上面脚本之后生成的x86交叉环境位于目录/opt/NDK/android-ndk-r14b/toolchain，如下图4-2所示（注意：还是需要使用root用户执行这个脚本）。
 
-![图4-2](./在linux上交叉编译nettle库/图4-2 生成的x86交叉编译环境toolchain目录.png)
+![图4-2](./在linux上交叉编译nettle库/图4-2生成的x86交叉编译环境toolchain目录.png)
 
 <center>图4-2 生成的x86交叉编译环境目录</center>
 
@@ -266,7 +266,7 @@ cd /tmp
 
 4. 执行./configure结果，如下图4-3所示。
 
-![图4-3](./在linux上交叉编译nettle库/图4-3 执行configure之后x86交叉编译配置信息.png)
+![图4-3](./在linux上交叉编译nettle库/图4-3执行configure之后x86交叉编译配置信息.png)
 
 <center>图4-3 执行confiugre之后x86交叉编译的配置信息</center>
 
