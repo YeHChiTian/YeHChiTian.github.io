@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Trie,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言 　　前阵子在leetcode刷题过程中了解了前缀树的数据结构，决定在此记录。本文主要是介绍前缀树（Trie）的基本概念以及优缺点（trade-off）和其应用场景，最后使用C++代码简单描述了前缀树的基本操作。  1、前缀树的定义前缀树的定义引用维基百科  　　在计算机科学中，trie，又称前缀树或字典树，是一种有序树)，用于保存关联数组，其中的键通常是字符串。与二叉查找树不同，键不是直接保">
+<meta name="keywords" content="Trie">
+<meta property="og:type" content="article">
+<meta property="og:title" content="前缀树">
+<meta property="og:url" content="http://yoursite.com/2019/01/01/前缀树/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言 　　前阵子在leetcode刷题过程中了解了前缀树的数据结构，决定在此记录。本文主要是介绍前缀树（Trie）的基本概念以及优缺点（trade-off）和其应用场景，最后使用C++代码简单描述了前缀树的基本操作。  1、前缀树的定义前缀树的定义引用维基百科  　　在计算机科学中，trie，又称前缀树或字典树，是一种有序树)，用于保存关联数组，其中的键通常是字符串。与二叉查找树不同，键不是直接保">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2019/01/01/前缀树/图1-1前缀树例子.png">
+<meta property="og:image" content="http://yoursite.com/2019/01/01/前缀树/图6-1google搜索例子.png">
+<meta property="og:image" content="http://yoursite.com/2019/01/01/前缀树/图6-2单词拼写例子.png">
+<meta property="og:image" content="http://yoursite.com/2019/01/01/前缀树/图7-1Trie的树形结构.png">
+<meta property="og:image" content="http://yoursite.com/2019/01/01/前缀树/图7-2插入key.jpg">
+<meta property="og:image" content="http://yoursite.com/2019/01/01/前缀树/图7-3搜索key.png">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.482Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="前缀树">
+<meta name="twitter:description" content="前言 　　前阵子在leetcode刷题过程中了解了前缀树的数据结构，决定在此记录。本文主要是介绍前缀树（Trie）的基本概念以及优缺点（trade-off）和其应用场景，最后使用C++代码简单描述了前缀树的基本操作。  1、前缀树的定义前缀树的定义引用维基百科  　　在计算机科学中，trie，又称前缀树或字典树，是一种有序树)，用于保存关联数组，其中的键通常是字符串。与二叉查找树不同，键不是直接保">
+<meta name="twitter:image" content="http://yoursite.com/2019/01/01/前缀树/图1-1前缀树例子.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/01/01/前缀树/">
+
+
+
+
+
+  <title>前缀树 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/01/01/前缀树/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">前缀树</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-01-01T21:45:20+08:00">
+                2019-01-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Algorithm-DataStructure/" itemprop="url" rel="index">
+                    <span itemprop="name">Algorithm&DataStructure</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><blockquote>
+<p>　　前阵子在leetcode刷题过程中了解了前缀树的数据结构，决定在此记录。本文主要是介绍前缀树（Trie）的基本概念以及优缺点（trade-off）和其应用场景，最后使用C++代码简单描述了前缀树的基本操作。</p>
+</blockquote>
+<h1 id="1、前缀树的定义"><a href="#1、前缀树的定义" class="headerlink" title="1、前缀树的定义"></a>1、前缀树的定义</h1><p><strong>前缀树的定义引用维基百科</strong></p>
+<blockquote>
+<p>　　在<a href="https://zh.wikipedia.org/wiki/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A7%91%E5%AD%A6" target="_blank" rel="noopener">计算机科学</a>中，trie，又称前缀树或字典树，是一种有序<a href="https://zh.wikipedia.org/wiki/%E6%A0%91_(%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84" target="_blank" rel="noopener">树</a>)，用于保存<a href="https://zh.wikipedia.org/wiki/%E5%85%B3%E8%81%94%E6%95%B0%E7%BB%84" target="_blank" rel="noopener">关联数组</a>，其中的键通常是<a href="https://zh.wikipedia.org/wiki/%E5%AD%97%E7%AC%A6%E4%B8%B2" target="_blank" rel="noopener">字符串</a>。与<a href="https://zh.wikipedia.org/wiki/%E4%BA%8C%E5%8F%89%E6%9F%A5%E6%89%BE%E6%A0%91" target="_blank" rel="noopener">二叉查找树</a>不同，键不是直接保存在节点中，而是由节点在树中的位置决定。一个节点的所有子孙都有相同的<a href="https://zh.wikipedia.org/wiki/%E5%89%8D%E7%BC%80" target="_blank" rel="noopener">前缀</a>，也就是这个节点对应的字符串，而根节点对应<a href="https://zh.wikipedia.org/wiki/%E7%A9%BA%E5%AD%97%E7%AC%A6%E4%B8%B2" target="_blank" rel="noopener">空字符串</a>。一般情况下，不是所有的节点都有对应的值，只有叶子节点和部分内部节点所对应的键才有相关的值。trie中的键通常是字符串，但也可以是其它的结构。trie的算法可以很容易地修改为处理其它结构的有序序列，比如一串数字或者形状的排列。</p>
+</blockquote>
+<p>直观观察前缀树结构可能更容易理解上面所讲定义，以下列举一个例子。<br>　　如图1-1是一个前缀树例子，每一个键（key）是多个字符组成的单词，每一个字符对应一个节点，每一个单词末尾字符节点包含一个数值（这个数值可能是这个单词出现的频率），此数值在此可以暂时忽略， 图1-1只是为了展示Trie的结构。</p>
+<p>​                                                  <img src="/2019/01/01/前缀树/图1-1前缀树例子.png" alt="图1-1"> </p>
+<center>图1-1 一个保存了8个键的trie结构，分别为”A”, “to”, “tea”, “ted”, “ten”, “i”, “in”, and “inn”.</center>
+
+<h1 id="2、前缀树三个基本特性"><a href="#2、前缀树三个基本特性" class="headerlink" title="2、前缀树三个基本特性"></a>2、前缀树三个基本特性</h1><blockquote>
+<p>1）根节点不包含字符，除根节点外每一个节点都只包含一个字符。<br>2）从根节点到某一节点，路径上经过的字符连接起来，为该节点对应的字符串。<br>3）每个节点的所有子节点包含的字符都不相同。</p>
+</blockquote>
+<h1 id="3、前缀树的核心思想"><a href="#3、前缀树的核心思想" class="headerlink" title="3、前缀树的核心思想"></a>3、前缀树的核心思想</h1><p><strong>使用空间换取时间，利用字符串的公共前缀来降低查询时间的开销以达到提高效率的目的。</strong></p>
+<h1 id="4、前缀树的优缺点-trade-off"><a href="#4、前缀树的优缺点-trade-off" class="headerlink" title="4、前缀树的优缺点(trade-off)"></a>4、前缀树的优缺点(trade-off)</h1><p><strong>优点：最大限度减少无谓字符串比较，插入和查询效率高。</strong><br><strong>缺点：trie树的空间内存消耗大。</strong></p>
+<h1 id="5、前缀树与其他结构比较"><a href="#5、前缀树与其他结构比较" class="headerlink" title="5、前缀树与其他结构比较"></a>5、前缀树与其他结构比较</h1><p>　　例如有一个包含n(n超过100万)个字符串的集合，每个字符串长度（m）不超过10，现在我们想在这个字符串集合中寻找某一个特定字符串， 找到则返回第一次出现的位置，否则返回空。</p>
+<p>1） 假如此时我们使用二叉搜索树，那么其搜索时间复杂度O(mlogn), 当n增大时候，其搜索效率也会下降许多<br>2） 如果使用哈希表，对于100万数据，选用合适的哈希函数，其哈希collision概率低，因此其搜索复杂度基本是常数级别O(1)。如果数据是静态的（没有动态增加）,此时使用哈希结构是比较合适的， 因为我们提前知道哈希数据集合大小，用perfect hashing或者cuckoohashing可以达到collision概率最小，构建完hash table之后对给定字符串进行查询几乎肯定是一次搞定。然而如果有大量数据插入时，为了降低collision概率，只能增大哈希表， 必须重新构建哈希表， 性能极度下降。<br>3） 使用Tier结构，那么其搜索效率O(m), m是字符串长度， 并且其也可以高效插入新的数据，主要缺点是内存占用比较大，另外Tier树的深度也不能太深（在此为字符串长度），不然其搜索性能也会下降。 </p>
+<p><strong>note: Trie可以进一步完善</strong></p>
+<blockquote>
+<p> 　　我们可以通过对Trie的内部节点进行压缩以提高内存使用率，比如“a”-&gt;”b”-&gt;”c”这三个连续的节点（a是b的父节点，b是c的父节点），”a”与”b”这两个节点均只有唯一的子节点，那么就可以很轻易的把”abc”合并为一个节点.</p>
+</blockquote>
+<h1 id="6、前缀树的应用领域"><a href="#6、前缀树的应用领域" class="headerlink" title="6、前缀树的应用领域"></a>6、前缀树的应用领域</h1><blockquote>
+<p>其应用领域主要是在集合中搜索包含关键字key前缀的字符串集合,这充分利用了Trie的优势。</p>
+</blockquote>
+<p>1） google的搜索自动补充共功能，如搜索引擎上输入搜索关键词“google sea”, 可以自动返回前缀相同的关键词，如图6-1所示。</p>
+<p><img src="/2019/01/01/前缀树/图6-1google搜索例子.png" alt></p>
+<center>图6-1 Google Suggest in action</center>
+
+<p>2） 单词拼写，当单词拼写出错的时候，可以自动检测并且给出相关正确单词提示。如图6-2所示。</p>
+<p><img src="/2019/01/01/前缀树/图6-2单词拼写例子.png" alt="图片6-2"></p>
+<center>图6-2 A Spell checker used in word processor</center>
+
+<h1 id="7、使用C-实现Trie的基本操作"><a href="#7、使用C-实现Trie的基本操作" class="headerlink" title="7、使用C++实现Trie的基本操作"></a>7、使用C++实现Trie的基本操作</h1><h2 id="7-1-Trie结构节点信息"><a href="#7-1-Trie结构节点信息" class="headerlink" title="7.1 Trie结构节点信息"></a>7.1 Trie结构节点信息</h2><p>Trie是一颗有根的树，它的节点一般具有如下字段：<br>1）<strong>最多有R个节点的数组</strong>。 每个节点最多拥有R个节点，或者节点为空。<br>2）<strong>一个bool类型的字段。</strong> 表示对应节点是否为key的末尾，或者只是这个key的前缀(key在这里可以理解为一个单词)<br>　　下图7-1为表示key为<strong>“leet”</strong>的Trie结构（假设R为26，并且假设字符由26个小写字母组成，后面代码实现也是基于这个假设，在这个基础上进行扩展并不困难）。</p>
+<p><img src="/2019/01/01/前缀树/图7-1Trie的树形结构.png" alt="图7-1"></p>
+<center>图7-1 Representation of a key “leet” in trie</center>
+
+<p>C++表示Trie节点代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TrieNode</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    TrieNode(): isEnd_(<span class="literal">false</span>)&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i =<span class="number">0</span> ; i &lt; R ; ++i)&#123;</span><br><span class="line">            links[i] = <span class="literal">nullptr</span>;</span><br><span class="line">        &#125;	</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">containsKey</span><span class="params">(<span class="keyword">char</span> ch)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> links[ch -<span class="string">'a'</span>] != <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function">TrieNode* <span class="title">get</span><span class="params">(<span class="keyword">char</span> ch)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> links[ch -<span class="string">'a'</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">put</span><span class="params">(<span class="keyword">char</span> ch, TrieNode* node)</span> </span>&#123;</span><br><span class="line">        links[ch -<span class="string">'a'</span>] = node;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setEnd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        isEnd_ = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">isEnd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> isEnd_;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">//R links to node children</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> R = <span class="number">26</span>;</span><br><span class="line">    TrieNode* links[R];</span><br><span class="line">    <span class="keyword">bool</span> isEnd_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h2 id="7-2-在Trie中插入一个key"><a href="#7-2-在Trie中插入一个key" class="headerlink" title="7.2 在Trie中插入一个key"></a>7.2 在Trie中插入一个key</h2><p>　　我们通过搜索Trie而插入一个键key，从根节点root开始并搜索一个每字符，该节点对应于key的第一个字符，有两种情况。如图7-2插入key所示。<br>1)   如果这个节点存在，我们将沿着这节点继续向下搜索下一个字符。<br>2）如果这个节点不存在，那么我们将为这个字符创建一个新节点，继续向下搜索直到key所有字符都在Trie。</p>
+<p><img src="/2019/01/01/前缀树/图7-2插入key.jpg" alt="图7-2"></p>
+ <center>图7-2  Insertion of keys into a trie.</center>
+
+<p>C++实现代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Trie</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    Trie() &#123;</span><br><span class="line">        root = <span class="keyword">new</span> TrieNode();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Inserts a word into the trie.</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">insert</span><span class="params">(<span class="built_in">string</span> word)</span> </span>&#123;</span><br><span class="line">        TrieNode* itNode = root;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">auto</span>&amp; it :  word)&#123;</span><br><span class="line">            <span class="keyword">if</span>(!itNode-&gt;containsKey(it))&#123;</span><br><span class="line">                TrieNode* tmpNode = <span class="keyword">new</span> TrieNode();</span><br><span class="line">                itNode-&gt;put(it,tmpNode);</span><br><span class="line">            &#125;</span><br><span class="line">            itNode = itNode-&gt;get(it);</span><br><span class="line">        &#125;</span><br><span class="line">        itNode-&gt;setEnd();</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    TrieNode* root;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>插入key的复杂度:<br>　　1）时间复杂度O(m), m表示字符串的长度.<br>　　2)   空间复杂度O(m), 最坏的情况下需要创建m个新节点。</p>
+<h2 id="7-3-在Trie中搜索key或者前缀key"><a href="#7-3-在Trie中搜索key或者前缀key" class="headerlink" title="7.3 在Trie中搜索key或者前缀key"></a>7.3 在Trie中搜索key或者前缀key</h2><p>　　每个key在Trie中表示为从根到内部节点或叶子的路径。我们从第一个关键字符的root开始，检查当前节点是否与key字符对应，有如下两种情况。如图7-3搜索key所示。<br>　　1）如果当前字符对应节点存在， 那么获取key下一个字符，在trie中继续向下遍历。<br>　　2）如果当前字符对应的节点不存在，返回空。<br>　　搜索key 返回的结果不为空， 如果其节点被标记为isEnd， 说明在trie中存在key。 如果节点没有标记为isEnd， 说明此key只是Trie结构中某元素的前缀而已。搜索key返回结果为空，说明Trie中不存在key这样的路径。</p>
+<p><img src="/2019/01/01/前缀树/图7-3搜索key.png" alt></p>
+<center>图7-3 Search for a key in a trie</center>
+
+<p>C++实现代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Trie</span>&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">//..........</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">//search a prefix or whole key in trie and</span></span><br><span class="line">    <span class="comment">//returns the node where search ends</span></span><br><span class="line">    <span class="function">TrieNode* <span class="title">searchPrefix</span><span class="params">(<span class="built_in">string</span> word)</span> </span>&#123;</span><br><span class="line">        TrieNode* itNode = root;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">auto</span>&amp; it :  word)&#123;</span><br><span class="line">            <span class="keyword">if</span>(itNode-&gt;containsKey(it))&#123;</span><br><span class="line">                itNode = itNode-&gt;get(it);</span><br><span class="line">            &#125;<span class="keyword">else</span></span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> itNode;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Returns if the word is in the trie.</span></span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">search</span><span class="params">(<span class="built_in">string</span> word)</span></span>&#123;</span><br><span class="line">        TrieNode* itNode=searchPrefix(word);</span><br><span class="line">        <span class="keyword">return</span> itNode!=<span class="literal">nullptr</span> &amp;&amp; itNode-&gt;isEnd();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Returns if there is any word in the trie</span></span><br><span class="line">    <span class="comment">// that starts with the given prefix.</span></span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">startsWith</span><span class="params">(<span class="built_in">string</span> prefix)</span> </span>&#123;</span><br><span class="line">        TrieNode* itNode=searchPrefix(prefix);</span><br><span class="line">        <span class="keyword">return</span> itNode != <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	TrieNode* root;	</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>搜索key或者搜索key前缀的复杂度：<br>　　1）时间复杂度O(m), m表示字符串的长度。<br>　　2）空间复杂度O(1)。</p>
+<h2 id="7-4-C-简单实现Trie完整代码"><a href="#7-4-C-简单实现Trie完整代码" class="headerlink" title="7.4 C++简单实现Trie完整代码"></a>7.4 C++简单实现Trie完整代码</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Trie</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">//注意嵌套类定义顺序有关。TrieNode变量的定义需要放在其声明后面</span></span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">TrieNode</span> &#123;</span></span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        TrieNode(): isEnd_(<span class="literal">false</span>)&#123;</span><br><span class="line">            <span class="keyword">for</span>(<span class="keyword">int</span> i =<span class="number">0</span> ; i &lt; R ; ++i)&#123;</span><br><span class="line">                links[i] = <span class="literal">nullptr</span>;</span><br><span class="line">            &#125;	</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">bool</span> <span class="title">containsKey</span><span class="params">(<span class="keyword">char</span> ch)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> links[ch -<span class="string">'a'</span>] != <span class="literal">nullptr</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function">TrieNode* <span class="title">get</span><span class="params">(<span class="keyword">char</span> ch)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> links[ch -<span class="string">'a'</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">put</span><span class="params">(<span class="keyword">char</span> ch, TrieNode* node)</span> </span>&#123;</span><br><span class="line">            links[ch -<span class="string">'a'</span>] = node;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">setEnd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            isEnd_ = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">bool</span> <span class="title">isEnd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> isEnd_;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="comment">// R links to node children</span></span><br><span class="line">        <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> R = <span class="number">26</span>;</span><br><span class="line">        TrieNode* links[R];</span><br><span class="line">        <span class="keyword">bool</span> isEnd_;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="comment">/** Initialize your data structure here. */</span></span><br><span class="line">    Trie() &#123;</span><br><span class="line">        root = <span class="keyword">new</span> TrieNode();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Inserts a word into the trie</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">insert</span><span class="params">(<span class="built_in">string</span> word)</span> </span>&#123;</span><br><span class="line">        TrieNode* itNode = root;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">auto</span>&amp; it :  word)&#123;</span><br><span class="line">            <span class="keyword">if</span>(!itNode-&gt;containsKey(it))&#123;</span><br><span class="line">                TrieNode* tmpNode = <span class="keyword">new</span> TrieNode();</span><br><span class="line">                itNode-&gt;put(it,tmpNode);</span><br><span class="line">            &#125;</span><br><span class="line">            itNode = itNode-&gt;get(it);</span><br><span class="line">        &#125;</span><br><span class="line">        itNode-&gt;setEnd();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//search a prefix or whole key in trie and</span></span><br><span class="line">    <span class="comment">//returns the node where search ends</span></span><br><span class="line">    <span class="function">TrieNode* <span class="title">searchPrefix</span><span class="params">(<span class="built_in">string</span> word)</span> </span>&#123;</span><br><span class="line">        TrieNode* itNode = root;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">auto</span>&amp; it :  word)&#123;</span><br><span class="line">            <span class="keyword">if</span>(itNode-&gt;containsKey(it))&#123;</span><br><span class="line">                itNode = itNode-&gt;get(it);</span><br><span class="line">            &#125;<span class="keyword">else</span></span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> itNode;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Returns if the word is in the trie.</span></span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">search</span><span class="params">(<span class="built_in">string</span> word)</span></span>&#123;</span><br><span class="line">        TrieNode* itNode=searchPrefix(word);</span><br><span class="line">        <span class="keyword">return</span> itNode!=<span class="literal">nullptr</span> &amp;&amp; itNode-&gt;isEnd();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Returns if there is any word in the trie</span></span><br><span class="line">    <span class="comment">// that starts with the given prefix.</span></span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">startsWith</span><span class="params">(<span class="built_in">string</span> prefix)</span> </span>&#123;</span><br><span class="line">        TrieNode* itNode=searchPrefix(prefix);</span><br><span class="line">        <span class="keyword">return</span> itNode != <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    TrieNode* root;	</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line">    Trie wd;</span><br><span class="line">    wd.insert(<span class="string">"abc"</span>);</span><br><span class="line">    <span class="built_in">cout</span>&lt;&lt;wd.search(<span class="string">"ab"</span>)&lt;&lt;<span class="built_in">endl</span>;   	</span><br><span class="line">    <span class="built_in">cout</span>&lt;&lt;wd.search(<span class="string">"abc"</span>)&lt;&lt;<span class="built_in">endl</span>;   		</span><br><span class="line">    <span class="built_in">cout</span>&lt;&lt;wd.startsWith(<span class="string">"ab"</span>)&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span>&lt;&lt;wd.startsWith(<span class="string">"abc"</span>)&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="8、使用map实现内存高效的Trie"><a href="#8、使用map实现内存高效的Trie" class="headerlink" title="8、使用map实现内存高效的Trie"></a>8、使用map实现内存高效的Trie</h1><p>　　在上面我们可以看出，每一个节点都需要提前分配R个指针空间，然而每个指针并非都有指向数据，因此当数据量大时，这会浪费足够的空间（当然，如果所有指针都指向有效节点，那将充分利用了空间，最理想的情况，可惜事情并没有这么完美）。 因此我们希望每个节点中存储孩子节点的指针，当需要对应的孩子节点时再创建指针指向新的节点，而不是提前分配。<br>　　我们使用使用map关联容器，当需要创建节点的时候再分配空间存储，而不是提前预分配。这样确实可以节省内存，但是使用map性能下降（万事没有太完美）。</p>
+<p>C++使用map结构实现Trie:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unordered_map&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// A Trie node</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Trie</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="comment">// true when node is a leaf node</span></span><br><span class="line">	<span class="keyword">bool</span> isLeaf;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// each node stores a map to its child nodes</span></span><br><span class="line">	<span class="built_in">unordered_map</span>&lt;<span class="keyword">char</span>, Trie*&gt; <span class="built_in">map</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Function that returns a new Trie node</span></span><br><span class="line"><span class="function">Trie* <span class="title">getNewTrieNode</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	Trie* node = <span class="keyword">new</span> Trie;</span><br><span class="line">	node-&gt;isLeaf = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> node;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Iterative function to insert a string in Trie.</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">insert</span><span class="params">(Trie*&amp; head, <span class="keyword">char</span>* str)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (head == <span class="literal">nullptr</span>)</span><br><span class="line">        head = getNewTrieNode();</span><br><span class="line"></span><br><span class="line">	<span class="comment">// start from root node</span></span><br><span class="line">	Trie* curr = head;</span><br><span class="line">	<span class="keyword">while</span> (*str)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// create a new node if path doesn't exists</span></span><br><span class="line">		<span class="keyword">if</span> (curr-&gt;<span class="built_in">map</span>.find(*str) == curr-&gt;<span class="built_in">map</span>.end())</span><br><span class="line">			curr-&gt;<span class="built_in">map</span>[*str] = getNewTrieNode();</span><br><span class="line"></span><br><span class="line">		<span class="comment">// go to next node</span></span><br><span class="line">		curr = curr-&gt;<span class="built_in">map</span>[*str];</span><br><span class="line"></span><br><span class="line">		<span class="comment">// move to next character</span></span><br><span class="line">		str++;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// mark current node as leaf</span></span><br><span class="line">	curr-&gt;isLeaf = <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// returns true if given node has any children</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">haveChildren</span><span class="params">(Trie <span class="keyword">const</span>* curr)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// don't use (curr-&gt;map).size() to check for children</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">auto</span> it : curr-&gt;<span class="built_in">map</span>)</span><br><span class="line">		<span class="keyword">if</span> (it.second != <span class="literal">nullptr</span>)</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Recursive function to delete a string in Trie.</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">deletion</span><span class="params">(Trie*&amp; curr, <span class="keyword">char</span>* str)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// return if Trie is empty</span></span><br><span class="line">	<span class="keyword">if</span> (curr == <span class="literal">nullptr</span>)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// if we have not reached the end of the string</span></span><br><span class="line">	<span class="keyword">if</span> (*str)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// recurse for the node corresponding to next character in</span></span><br><span class="line">		<span class="comment">// the string and if it returns true, delete current node</span></span><br><span class="line">		<span class="comment">// (if it is non-leaf)</span></span><br><span class="line">		<span class="keyword">if</span> (curr != <span class="literal">nullptr</span> &amp;&amp;  curr-&gt;<span class="built_in">map</span>.find(*str) != curr-&gt;<span class="built_in">map</span>.end() &amp;&amp;</span><br><span class="line">			deletion(curr-&gt;<span class="built_in">map</span>[*str], str + <span class="number">1</span>) &amp;&amp; curr-&gt;isLeaf == <span class="literal">false</span>)</span><br><span class="line">		&#123;</span><br><span class="line">		    <span class="keyword">if</span> (!haveChildren(curr))</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">delete</span> curr;;</span><br><span class="line">				curr = <span class="literal">nullptr</span>;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// if we have reached the end of the string</span></span><br><span class="line">	<span class="keyword">if</span> (*str == <span class="string">'\0'</span> &amp;&amp; curr-&gt;isLeaf)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// if current node is a leaf node and don't have any children</span></span><br><span class="line">		<span class="keyword">if</span> (!haveChildren(curr))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">delete</span> curr;; <span class="comment">// delete current node</span></span><br><span class="line">			curr = <span class="literal">nullptr</span>;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">// delete non-leaf parent nodes</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// if current node is a leaf node and have children</span></span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// mark current node as non-leaf node (DON'T DELETE IT)</span></span><br><span class="line">			curr-&gt;isLeaf = <span class="literal">false</span>;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">false</span>;	   <span class="comment">// don't delete its parent nodes</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Iterative function to search a string in Trie. It returns true</span></span><br><span class="line"><span class="comment">// if the string is found in the Trie, else it returns false</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">search</span><span class="params">(Trie* head, <span class="keyword">char</span>* str)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// return false if Trie is empty</span></span><br><span class="line">	<span class="keyword">if</span> (head == <span class="literal">nullptr</span>)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">	Trie* curr = head;</span><br><span class="line">	<span class="keyword">while</span> (*str)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// go to next node</span></span><br><span class="line">		curr = curr-&gt;<span class="built_in">map</span>[*str];</span><br><span class="line"></span><br><span class="line">		<span class="comment">// if string is invalid (reached end of path in Trie)</span></span><br><span class="line">		<span class="keyword">if</span> (curr == <span class="literal">nullptr</span>)</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// move to next character</span></span><br><span class="line">		str++;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// if current node is a leaf and we have reached the</span></span><br><span class="line">	<span class="comment">// end of the string, return true</span></span><br><span class="line">	<span class="keyword">return</span> curr-&gt;isLeaf;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Memory efficient Trie Implementation in C++ using Map</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	Trie* head = <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">	insert(head, <span class="string">"hello"</span>);</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"hello"</span>) &lt;&lt; <span class="string">" "</span>;   	<span class="comment">// print 1</span></span><br><span class="line"></span><br><span class="line">	insert(head, <span class="string">"helloworld"</span>);</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"helloworld"</span>) &lt;&lt; <span class="string">" "</span>;  <span class="comment">// print 1</span></span><br><span class="line"></span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"helll"</span>) &lt;&lt; <span class="string">" "</span>;   	<span class="comment">// print 0 (Not present)</span></span><br><span class="line"></span><br><span class="line">	insert(head, <span class="string">"hell"</span>);</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"hell"</span>) &lt;&lt; <span class="string">" "</span>;		<span class="comment">// print 1</span></span><br><span class="line"></span><br><span class="line">	insert(head, <span class="string">"h"</span>);</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"h"</span>) &lt;&lt; <span class="built_in">endl</span>;  		<span class="comment">// print 1 + newline</span></span><br><span class="line"></span><br><span class="line">	deletion(head, <span class="string">"hello"</span>);</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"hello"</span>) &lt;&lt; <span class="string">" "</span>;   	<span class="comment">// print 0 (hello deleted)</span></span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"helloworld"</span>) &lt;&lt; <span class="string">" "</span>;  <span class="comment">// print 1</span></span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"hell"</span>) &lt;&lt; <span class="built_in">endl</span>;   	<span class="comment">// print 1 + newline</span></span><br><span class="line"></span><br><span class="line">	deletion(head, <span class="string">"h"</span>);</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"h"</span>) &lt;&lt; <span class="string">" "</span>;   		<span class="comment">// print 0 (h deleted)</span></span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"hell"</span>) &lt;&lt; <span class="string">" "</span>;		<span class="comment">// print 1</span></span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"helloworld"</span>) &lt;&lt; <span class="built_in">endl</span>; <span class="comment">// print 1 + newline</span></span><br><span class="line"></span><br><span class="line">	deletion(head, <span class="string">"helloworld"</span>);</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"helloworld"</span>) &lt;&lt; <span class="string">" "</span>;  <span class="comment">// print 0</span></span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"hell"</span>) &lt;&lt; <span class="string">" "</span>;		<span class="comment">// print 1</span></span><br><span class="line"></span><br><span class="line">	deletion(head, <span class="string">"hell"</span>);</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"hell"</span>) &lt;&lt; <span class="built_in">endl</span>;   	<span class="comment">// print 0 + newline</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (head == <span class="literal">nullptr</span>)</span><br><span class="line">		<span class="built_in">cout</span> &lt;&lt; <span class="string">"Trie empty!!\n"</span>;   			<span class="comment">// Trie is empty now</span></span><br><span class="line"></span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; search(head, <span class="string">"hell"</span>);   			<span class="comment">// print 0</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="9、总结"><a href="#9、总结" class="headerlink" title="9、总结"></a>9、总结</h1><p>　　Trie结构主要用在前缀的匹配上，其他领域基本都用hash。从工程角度出发，标准库中很多容器，如map,set等内置都使用hash实现，而不是用Trie。<br>　　另外，这是2019年第一篇博客，也是第一次在github上写文章，此次由于Markdown语法不熟悉，大概花了4个小时才完成这个文章，希望日后继续坚持。</p>
+<h1 id="10、参考"><a href="#10、参考" class="headerlink" title="10、参考"></a>10、参考</h1><p><a href="https://leetcode.com/articles/implement-trie-prefix-tree/" target="_blank" rel="noopener">https://leetcode.com/articles/implement-trie-prefix-tree/</a><br><a href="https://blog.csdn.net/hguisu/article/details/8131559" target="_blank" rel="noopener">https://blog.csdn.net/hguisu/article/details/8131559</a><br><a href="https://www.zhihu.com/question/32250589" target="_blank" rel="noopener">https://www.zhihu.com/question/32250589</a><br><a href="https://www.techiedelight.com/memory-efficient-trie-implementation-using-map-insert-search-delete/" target="_blank" rel="noopener">https://www.techiedelight.com/memory-efficient-trie-implementation-using-map-insert-search-delete/</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Trie/" rel="tag"># Trie</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/14/浅谈bt中的lpd协议以及源码实现/" rel="prev" title="浅谈bt中的lpd协议以及源码实现">
+                浅谈bt中的lpd协议以及源码实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1、前缀树的定义"><span class="nav-text">1、前缀树的定义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、前缀树三个基本特性"><span class="nav-text">2、前缀树三个基本特性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、前缀树的核心思想"><span class="nav-text">3、前缀树的核心思想</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4、前缀树的优缺点-trade-off"><span class="nav-text">4、前缀树的优缺点(trade-off)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5、前缀树与其他结构比较"><span class="nav-text">5、前缀树与其他结构比较</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6、前缀树的应用领域"><span class="nav-text">6、前缀树的应用领域</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7、使用C-实现Trie的基本操作"><span class="nav-text">7、使用C++实现Trie的基本操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-Trie结构节点信息"><span class="nav-text">7.1 Trie结构节点信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-在Trie中插入一个key"><span class="nav-text">7.2 在Trie中插入一个key</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-3-在Trie中搜索key或者前缀key"><span class="nav-text">7.3 在Trie中搜索key或者前缀key</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-4-C-简单实现Trie完整代码"><span class="nav-text">7.4 C++简单实现Trie完整代码</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8、使用map实现内存高效的Trie"><span class="nav-text">8、使用map实现内存高效的Trie</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9、总结"><span class="nav-text">9、总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10、参考"><span class="nav-text">10、参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

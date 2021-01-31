@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="FD_宏,位数组,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言 今天看到select中关于 FD_CLR,FD_ISSET,FD_SET,FD_ZERO四个宏定义，顺便看看其内部如何实现。 其实现主要靠的是位数组和位运算。 本文主要记录在linux上分析这四个宏实现的源码。  一、FD_四个宏介绍通过select文档，可以看到几个宏的相关声明（通过man命令查询文档）在sys/select.h文件，其主要是为select以及pselect两个多路IO服务">
+<meta name="keywords" content="FD_宏,位数组">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux关于select中FD_相关宏实现">
+<meta property="og:url" content="http://yoursite.com/2019/11/11/Linux关于select中FD_相关宏实现/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言 今天看到select中关于 FD_CLR,FD_ISSET,FD_SET,FD_ZERO四个宏定义，顺便看看其内部如何实现。 其实现主要靠的是位数组和位运算。 本文主要记录在linux上分析这四个宏实现的源码。  一、FD_四个宏介绍通过select文档，可以看到几个宏的相关声明（通过man命令查询文档）在sys/select.h文件，其主要是为select以及pselect两个多路IO服务">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.457Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux关于select中FD_相关宏实现">
+<meta name="twitter:description" content="前言 今天看到select中关于 FD_CLR,FD_ISSET,FD_SET,FD_ZERO四个宏定义，顺便看看其内部如何实现。 其实现主要靠的是位数组和位运算。 本文主要记录在linux上分析这四个宏实现的源码。  一、FD_四个宏介绍通过select文档，可以看到几个宏的相关声明（通过man命令查询文档）在sys/select.h文件，其主要是为select以及pselect两个多路IO服务">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/11/11/Linux关于select中FD_相关宏实现/">
+
+
+
+
+
+  <title>Linux关于select中FD_相关宏实现 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/11/Linux关于select中FD_相关宏实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Linux关于select中FD_相关宏实现</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-11-11T22:09:05+08:00">
+                2019-11-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux/" itemprop="url" rel="index">
+                    <span itemprop="name">Linux</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><blockquote>
+<p>今天看到select中关于 <strong>FD_CLR,FD_ISSET,FD_SET,FD_ZERO</strong>四个宏定义，顺便看看其内部如何实现。 其实现主要靠的是<strong>位数组和位运算</strong>。 本文主要记录在linux上分析这四个宏实现的源码。</p>
+</blockquote>
+<h1 id="一、FD-四个宏介绍"><a href="#一、FD-四个宏介绍" class="headerlink" title="一、FD_四个宏介绍"></a>一、FD_四个宏介绍</h1><p>通过<strong>select</strong>文档，可以看到几个宏的相关声明（通过<strong>man</strong>命令查询文档）在<strong>sys/select.h</strong>文件，其主要是为select以及pselect两个多路IO服务。 而select使用<strong>fd_set</strong>数据结构管理描述符集合，那么将涉及另外问题，如何将一个描述符添加到<strong>fd_set</strong>集合或者从改集合删除，四个宏<strong>FD_</strong>就是来完成这个任务的。下面简单描述这四个宏。</p>
+<ul>
+<li>FD_CLR宏将描述符fd从集合fd_set中移除</li>
+<li>FD_ISSET宏判断描述符fd是否在集合fd_set</li>
+<li>FD_SET宏将描述符fd添加到集合fd_set</li>
+<li>FD_ZERO宏将清空描述符集合fd_set</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">SELECT(<span class="number">2</span>)                           Linux Programmer<span class="number">'</span>s Manual                       </span><br><span class="line"></span><br><span class="line">NAME</span><br><span class="line">       select, pselect, FD_CLR, FD_ISSET, FD_SET, FD_ZERO - synchronous I/O multiplexing</span><br><span class="line"></span><br><span class="line">SYNOPSIS</span><br><span class="line">       <span class="comment">/* According to POSIX.1-2001, POSIX.1-2008 */</span></span><br><span class="line">       <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/select.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">       <span class="comment">/* According to earlier standards */</span></span><br><span class="line">       <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/time.h&gt;</span></span></span><br><span class="line">       <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line">       <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">       <span class="function"><span class="keyword">int</span> <span class="title">select</span><span class="params">(<span class="keyword">int</span> nfds, fd_set *readfds, fd_set *writefds,</span></span></span><br><span class="line"><span class="function"><span class="params">                  fd_set *exceptfds, struct timeval *timeout)</span></span>;</span><br><span class="line"></span><br><span class="line">       <span class="function"><span class="keyword">void</span> <span class="title">FD_CLR</span><span class="params">(<span class="keyword">int</span> fd, fd_set *<span class="built_in">set</span>)</span></span>;</span><br><span class="line">       <span class="function"><span class="keyword">int</span>  <span class="title">FD_ISSET</span><span class="params">(<span class="keyword">int</span> fd, fd_set *<span class="built_in">set</span>)</span></span>;</span><br><span class="line">       <span class="function"><span class="keyword">void</span> <span class="title">FD_SET</span><span class="params">(<span class="keyword">int</span> fd, fd_set *<span class="built_in">set</span>)</span></span>;</span><br><span class="line">       <span class="function"><span class="keyword">void</span> <span class="title">FD_ZERO</span><span class="params">(fd_set *<span class="built_in">set</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">       <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/select.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">       <span class="function"><span class="keyword">int</span> <span class="title">pselect</span><span class="params">(<span class="keyword">int</span> nfds, fd_set *readfds, fd_set *writefds,</span></span></span><br><span class="line"><span class="function"><span class="params">                   fd_set *exceptfds, <span class="keyword">const</span> struct timespec *timeout,</span></span></span><br><span class="line"><span class="function"><span class="params">                   <span class="keyword">const</span> <span class="keyword">sigset_t</span> *sigmask)</span></span>;</span><br></pre></td></tr></table></figure>
+<h1 id="二、FD-宏相关实现"><a href="#二、FD-宏相关实现" class="headerlink" title="二、FD_宏相关实现"></a>二、FD_宏相关实现</h1><p>在/usr/include/x86_64-linux-gnu/sys/select.h文件中查看FD_宏实现，其又依赖于<strong>__FD_</strong>相关宏。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Access macros for `fd_set'.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_SET(fd, fdsetp)	__FD_SET (fd, fdsetp)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_CLR(fd, fdsetp)	__FD_CLR (fd, fdsetp)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_ISSET(fd, fdsetp)	__FD_ISSET (fd, fdsetp)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_ZERO(fdsetp)		__FD_ZERO (fdsetp)</span></span><br></pre></td></tr></table></figure>
+<p>关于__FD相关定义，__FD_ZERO宏定义有两个版本（一个是GNU CC标准，一个是非GNU CC），在/usr/include/x86_64-linux-gnu/bits/select.h文件中可查看 _FD定义。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __FD_SET(d, set) \</span></span><br><span class="line">  ((<span class="keyword">void</span>) (__FDS_BITS (<span class="built_in">set</span>)[__FD_ELT (d)] |= __FD_MASK (d)))</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __FD_CLR(d, set) \</span></span><br><span class="line">  ((<span class="keyword">void</span>) (__FDS_BITS (<span class="built_in">set</span>)[__FD_ELT (d)] &amp;= ~__FD_MASK (d)))</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __FD_ISSET(d, set) \</span></span><br><span class="line">  ((__FDS_BITS (<span class="built_in">set</span>)[__FD_ELT (d)] &amp; __FD_MASK (d)) != <span class="number">0</span>)</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//关于__FD_ZERO宏。 有两个版本的实现</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">if</span> __WORDSIZE == 64</span></span><br><span class="line"><span class="meta">#  <span class="meta-keyword">define</span> __FD_ZERO_STOS <span class="meta-string">"stosq"</span></span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">else</span></span></span><br><span class="line"><span class="meta">#  <span class="meta-keyword">define</span> __FD_ZERO_STOS <span class="meta-string">"stosl"</span></span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FD_ZERO(fdsp) \</span></span><br><span class="line">  <span class="keyword">do</span> &#123;									      \</span><br><span class="line">    <span class="keyword">int</span> __d0, __d1;							      \</span><br><span class="line">    __asm__ __volatile__ (<span class="string">"cld; rep; "</span> __FD_ZERO_STOS			      \</span><br><span class="line">			  : <span class="string">"=c"</span> (__d0), <span class="string">"=D"</span> (__d1)			      \</span><br><span class="line">			  : <span class="string">"a"</span> (<span class="number">0</span>), <span class="string">"0"</span> (<span class="keyword">sizeof</span> (fd_set)		      \</span><br><span class="line">					  / <span class="keyword">sizeof</span> (__fd_mask)),	      \</span><br><span class="line">			    <span class="string">"1"</span> (&amp;__FDS_BITS (fdsp)[<span class="number">0</span>])			      \</span><br><span class="line">			  : <span class="string">"memory"</span>);					      \</span><br><span class="line">  &#125; <span class="keyword">while</span> (<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span>	<span class="comment">/* ! GNU CC */</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* We don't use `memset' because this would require a prototype and</span></span><br><span class="line"><span class="comment">   the array isn't too big.  */</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FD_ZERO(set)  \</span></span><br><span class="line">  <span class="keyword">do</span> &#123;									      \</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> __i;							      \</span><br><span class="line">    fd_set *__arr = (<span class="built_in">set</span>);						      \</span><br><span class="line">    <span class="keyword">for</span> (__i = <span class="number">0</span>; __i &lt; <span class="keyword">sizeof</span> (fd_set) / <span class="keyword">sizeof</span> (__fd_mask); ++__i)	      \</span><br><span class="line">      __FDS_BITS (__arr)[__i] = <span class="number">0</span>;					      \</span><br><span class="line">  &#125; <span class="keyword">while</span> (<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span>	<span class="comment">/* GNU CC */</span></span></span><br></pre></td></tr></table></figure>
+<p> __FD宏定义都依赖于 _FDS_BITS。在/usr/include/x86_64-linux-gnu/sys/select.h， 可以看其实现以及<strong>fd_set</strong>结构。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* The fd_set member is required to be an array of longs.  */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">int</span> __fd_mask;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Some versions of &lt;linux/posix_types.h&gt; define this macros.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">undef</span>	__NFDBITS</span></span><br><span class="line"><span class="comment">/* It's easier to assume 8-bit bytes than to get CHAR_BIT.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __NFDBITS	(8 * (int) sizeof (__fd_mask))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	__FD_ELT(d)	((d) / __NFDBITS)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	__FD_MASK(d)	((__fd_mask) (1UL &lt;&lt; ((d) % __NFDBITS)))</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* fd_set for select and pselect.  */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span></span></span><br><span class="line"><span class="class">  &#123;</span></span><br><span class="line">    <span class="comment">/* XPG4.2 requires this member name.  Otherwise avoid the name</span></span><br><span class="line"><span class="comment">       from the global namespace.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> __USE_XOPEN</span></span><br><span class="line">    __fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];</span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FDS_BITS(set) ((set)-&gt;fds_bits)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    __fd_mask __fds_bits[__FD_SETSIZE / __NFDBITS];</span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FDS_BITS(set) ((set)-&gt;__fds_bits)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">  &#125; fd_set;</span><br></pre></td></tr></table></figure>
+<p>从中可以知道: (假如在64位操作系统)</p>
+<ul>
+<li><p>fd_set集合中包含一个成员fds_bits，是一个数组，元素类型为<strong>__fd_mask</strong>，其实是long int 类型（在64位操作系统中，代表8个字节，32位操作系统4个字节），数组大小为 _FD_SETSIZE / __NFDBITS。因此fd_set结构主要就是为了维护一个数组（本质实现为<strong>位数组</strong>）</p>
+</li>
+<li><p>__FD_SETSIZE值是系统默认定义为<strong>1024</strong>，表示最多可以存放1024个描述符（位于文件：/usr/include/x86_64-linux-gnu/bits/typesizes.h）</p>
+</li>
+<li><p>__NFDBITS值依赖__fd_mask类型字节，将__fd_mask字节数<strong>*8</strong>, 那是因为一个字节刚好有8位,__fd_mask是8个字节（ 使用二进制表示一共有2^64位），__NFDBITS值为64。  </p>
+<p>__FD_SETSIZE/__NFDBITS 即表示为1024/64=16， 因此fd_set结构中成员fd_bits数组大小为16， 而每一个元素可以表示64位，每一位将代表一个描述符， 所以16个元素可以表示1024个描述符。</p>
+</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __NFDBITS	(8 * (int) sizeof (__fd_mask))</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>__FD_ELT(d), 表示d/__NFDBITS, 即在位数组中第几个元素。 假如描述符d=8, 那么会将d描述符保存在fds_bits数组中0号元素。d=351, 351/64 = 5, 那么保存d描述符到fds_bits数组5号元素。</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	__FD_ELT(d)	((d) / __NFDBITS)</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>__FD_MASK(d), 表示将1左移d%__NFDBITS位, 值记为r，即表示描述符d存在fds_bits数组某个元素中的第r位。假如d=8, r = 8, 表示描述符即将存在fds_bits数组中0号元素中第8位（第0号元素二进制第8位为1），假如d=351, r = 31, 表示描述符即将存在fds_bits数组中5号元素中第31位（第5号元素二进制第31位为1）。</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	__FD_MASK(d)	((__fd_mask) (1UL &lt;&lt; ((d) % __NFDBITS)))</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>__FDS_BITS(set), 即表示引用set结构中的fds_bits成员， 即可以直接引用fd_set集合中的fds_bits成员。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># define __FDS_BITS(set) ((set)-&gt;fds_bits)</span><br></pre></td></tr></table></figure>
+<p>接下来，就是将上面的介绍的串起来。</p>
+<p>对于<strong>FD_SET</strong>宏，定义如下</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_SET(fd, fdsetp)	__FD_SET (fd, fdsetp)</span></span><br></pre></td></tr></table></figure>
+<p>接着看, 下面的转换</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __FD_SET(d, set) \</span></span><br><span class="line">  ((<span class="keyword">void</span>) (__FDS_BITS (<span class="built_in">set</span>)[__FD_ELT (d)] |= __FD_MASK (d)))</span><br></pre></td></tr></table></figure>
+<p>等价于</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">void (set)-&gt;fds_bits[__FD_ELT (d)] |= __FD_MASK (d)))</span><br></pre></td></tr></table></figure>
+<p>意味着__FD_set(d , set)， 将描述符d存放到结构set中的fds_bits中，第(d) / __NFDBITS号元素中第1UL &lt;&lt; ((d) % __NFDBITS))位赋值位1。（详细前面有分析）</p>
+<p>同理可分析<strong>__FD_CLR, __FD_ISSET</strong>宏。注意区分他们各自使用的<strong>位运算</strong>.</p>
+<p>对于<strong>__FD_ZERO</strong>宏，主要将描述符集合fd_set清空（即所有位置0）。 其实现有两种不同方式。 （基于我们对前面结构的了解，如果我们自己实现也不难）。第一个是GNU CC标准，目前看不太懂。第二个版本简单遍历数组，将每个元素置0.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">if</span> defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 2</span></span><br><span class="line"></span><br><span class="line"><span class="meta"># <span class="meta-keyword">if</span> __WORDSIZE == 64</span></span><br><span class="line"><span class="meta">#  <span class="meta-keyword">define</span> __FD_ZERO_STOS <span class="meta-string">"stosq"</span></span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">else</span></span></span><br><span class="line"><span class="meta">#  <span class="meta-keyword">define</span> __FD_ZERO_STOS <span class="meta-string">"stosl"</span></span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FD_ZERO(fdsp) \</span></span><br><span class="line">  <span class="keyword">do</span> &#123;									      \</span><br><span class="line">    <span class="keyword">int</span> __d0, __d1;							      \</span><br><span class="line">    __asm__ __volatile__ (<span class="string">"cld; rep; "</span> __FD_ZERO_STOS			      \</span><br><span class="line">			  : <span class="string">"=c"</span> (__d0), <span class="string">"=D"</span> (__d1)			      \</span><br><span class="line">			  : <span class="string">"a"</span> (<span class="number">0</span>), <span class="string">"0"</span> (<span class="keyword">sizeof</span> (fd_set)		      \</span><br><span class="line">					  / <span class="keyword">sizeof</span> (__fd_mask)),	      \</span><br><span class="line">			    <span class="string">"1"</span> (&amp;__FDS_BITS (fdsp)[<span class="number">0</span>])			      \</span><br><span class="line">			  : <span class="string">"memory"</span>);					      \</span><br><span class="line">  &#125; <span class="keyword">while</span> (<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span>	<span class="comment">/* ! GNU CC */</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* We don't use `memset' because this would require a prototype and</span></span><br><span class="line"><span class="comment">   the array isn't too big.  */</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FD_ZERO(set)  \</span></span><br><span class="line">  <span class="keyword">do</span> &#123;									      \</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> __i;							      \</span><br><span class="line">    fd_set *__arr = (<span class="built_in">set</span>);						      \</span><br><span class="line">    <span class="keyword">for</span> (__i = <span class="number">0</span>; __i &lt; <span class="keyword">sizeof</span> (fd_set) / <span class="keyword">sizeof</span> (__fd_mask); ++__i)	      \</span><br><span class="line">      __FDS_BITS (__arr)[__i] = <span class="number">0</span>;					      \</span><br><span class="line">  &#125; <span class="keyword">while</span> (<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span>	<span class="comment">/* GNU CC */</span></span></span><br></pre></td></tr></table></figure>
+<h1 id="三、总结"><a href="#三、总结" class="headerlink" title="三、总结"></a>三、总结</h1><ul>
+<li><p>为什么FD_相关宏实现使用了位数组？</p>
+<p>我觉得主要是为了节约内存。每一个二进制位即可用来表示一个描述符， 1个字节可用来表示8个描述符。</p>
+</li>
+<li><p>fd_set数据结构里面只有包含了一个数组成员， 为什么要使用一个结构来封装这个数组，而不直接使用这个数组即可？</p>
+<p>我觉得主要是为了方便表示，使用一个变量和使用一个数组，显然使用一个变量更加方便。而且在底层数据拷贝的时候，拷贝一个数据结构变量，明显比拷贝一个数组方便。</p>
+</li>
+<li><p>对于信号集函数，实现也类似，使用了位数组。 其声明函数如下。</p>
+</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">SIGSETOPS(<span class="number">3</span>)                                               Linux Programmer<span class="number">'</span><span class="function">s Manual                                               <span class="title">SIGSETOPS</span><span class="params">(<span class="number">3</span>)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">NAME</span></span><br><span class="line">       sigemptyset, sigfillset, sigaddset, sigdelset, sigismember - POSIX signal set operations</span><br><span class="line"></span><br><span class="line">SYNOPSIS</span><br><span class="line">       <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;signal.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">       <span class="function"><span class="keyword">int</span> <span class="title">sigemptyset</span><span class="params">(<span class="keyword">sigset_t</span> *<span class="built_in">set</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">       <span class="function"><span class="keyword">int</span> <span class="title">sigfillset</span><span class="params">(<span class="keyword">sigset_t</span> *<span class="built_in">set</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">       <span class="function"><span class="keyword">int</span> <span class="title">sigaddset</span><span class="params">(<span class="keyword">sigset_t</span> *<span class="built_in">set</span>, <span class="keyword">int</span> signum)</span></span>;</span><br><span class="line"></span><br><span class="line">       <span class="function"><span class="keyword">int</span> <span class="title">sigdelset</span><span class="params">(<span class="keyword">sigset_t</span> *<span class="built_in">set</span>, <span class="keyword">int</span> signum)</span></span>;</span><br></pre></td></tr></table></figure>
+<h1 id="四、完整源码"><a href="#四、完整源码" class="headerlink" title="四、完整源码"></a>四、完整源码</h1><p>头文件/usr/include/x86_64-linux-gnu/sys/select.h </p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*	POSIX 1003.1g: 6.2 Select from File Descriptor Sets &lt;sys/select.h&gt;  */</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> _SYS_SELECT_H</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _SYS_SELECT_H	1</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;features.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Get definition of needed basic types.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/types.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Get __FD_* definitions.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/select.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Get __sigset_t.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/sigset.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> __sigset_t_defined</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __sigset_t_defined</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">__sigset_t</span> <span class="keyword">sigset_t</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Get definition of timer specification structures.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __need_time_t</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __need_timespec</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __need_timeval</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/time.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> __suseconds_t_defined</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">__suseconds_t</span> <span class="keyword">suseconds_t</span>;</span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __suseconds_t_defined</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/* The fd_set member is required to be an array of longs.  */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">int</span> __fd_mask;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Some versions of &lt;linux/posix_types.h&gt; define this macros.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">undef</span>	__NFDBITS</span></span><br><span class="line"><span class="comment">/* It's easier to assume 8-bit bytes than to get CHAR_BIT.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __NFDBITS	(8 * (int) sizeof (__fd_mask))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	__FD_ELT(d)	((d) / __NFDBITS)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	__FD_MASK(d)	((__fd_mask) (1UL &lt;&lt; ((d) % __NFDBITS)))</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* fd_set for select and pselect.  */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span></span></span><br><span class="line"><span class="class">  &#123;</span></span><br><span class="line">    <span class="comment">/* XPG4.2 requires this member name.  Otherwise avoid the name</span></span><br><span class="line"><span class="comment">       from the global namespace.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> __USE_XOPEN</span></span><br><span class="line">    __fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];</span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FDS_BITS(set) ((set)-&gt;fds_bits)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    __fd_mask __fds_bits[__FD_SETSIZE / __NFDBITS];</span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FDS_BITS(set) ((set)-&gt;__fds_bits)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">  &#125; fd_set;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Maximum number of file descriptors in `fd_set'.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_SETSIZE		__FD_SETSIZE</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> __USE_MISC</span></span><br><span class="line"><span class="comment">/* Sometimes the fd_set member is assumed to have this type.  */</span></span><br><span class="line"><span class="keyword">typedef</span> __fd_mask fd_mask;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Number of bits per word of `fd_set' (some code assumes this is 32).  */</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> NFDBITS		__NFDBITS</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Access macros for `fd_set'.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_SET(fd, fdsetp)	__FD_SET (fd, fdsetp)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_CLR(fd, fdsetp)	__FD_CLR (fd, fdsetp)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_ISSET(fd, fdsetp)	__FD_ISSET (fd, fdsetp)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span>	FD_ZERO(fdsetp)		__FD_ZERO (fdsetp)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">__BEGIN_DECLS</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Check the first NFDS descriptors each in READFDS (if not NULL) for read</span></span><br><span class="line"><span class="comment">   readiness, in WRITEFDS (if not NULL) for write readiness, and in EXCEPTFDS</span></span><br><span class="line"><span class="comment">   (if not NULL) for exceptional conditions.  If TIMEOUT is not NULL, time out</span></span><br><span class="line"><span class="comment">   after waiting the interval specified therein.  Returns the number of ready</span></span><br><span class="line"><span class="comment">   descriptors, or -1 for errors.</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">   This function is a cancellation point and therefore not marked with</span></span><br><span class="line"><span class="comment">   __THROW.  */</span></span><br><span class="line"><span class="function"><span class="keyword">extern</span> <span class="keyword">int</span> <span class="title">select</span> <span class="params">(<span class="keyword">int</span> __nfds, fd_set *__restrict __readfds,</span></span></span><br><span class="line"><span class="function"><span class="params">		   fd_set *__restrict __writefds,</span></span></span><br><span class="line"><span class="function"><span class="params">		   fd_set *__restrict __exceptfds,</span></span></span><br><span class="line"><span class="function"><span class="params">		   struct timeval *__restrict __timeout)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> __USE_XOPEN2K</span></span><br><span class="line"><span class="comment">/* Same as above only that the TIMEOUT value is given with higher</span></span><br><span class="line"><span class="comment">   resolution and a sigmask which is been set temporarily.  This version</span></span><br><span class="line"><span class="comment">   should be used.</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">   This function is a cancellation point and therefore not marked with</span></span><br><span class="line"><span class="comment">   __THROW.  */</span></span><br><span class="line"><span class="function"><span class="keyword">extern</span> <span class="keyword">int</span> <span class="title">pselect</span> <span class="params">(<span class="keyword">int</span> __nfds, fd_set *__restrict __readfds,</span></span></span><br><span class="line"><span class="function"><span class="params">		    fd_set *__restrict __writefds,</span></span></span><br><span class="line"><span class="function"><span class="params">		    fd_set *__restrict __exceptfds,</span></span></span><br><span class="line"><span class="function"><span class="params">		    <span class="keyword">const</span> struct timespec *__restrict __timeout,</span></span></span><br><span class="line"><span class="function"><span class="params">		    <span class="keyword">const</span> <span class="keyword">__sigset_t</span> *__restrict __sigmask)</span></span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Define some inlines helping to catch common problems.  */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> __USE_FORTIFY_LEVEL &gt; 0 &amp;&amp; defined __GNUC__</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/select2.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">__END_DECLS</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span> <span class="comment">/* sys/select.h */</span></span></span><br></pre></td></tr></table></figure>
+<p>头文件/usr/include/x86_64-linux-gnu/bits/select.h</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> _SYS_SELECT_H</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">error</span> <span class="meta-string">"Never use &lt;bits/select.h&gt; directly; include &lt;sys/select.h&gt; instead."</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/wordsize.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> defined __GNUC__ &amp;&amp; __GNUC__ &gt;= 2</span></span><br><span class="line"></span><br><span class="line"><span class="meta"># <span class="meta-keyword">if</span> __WORDSIZE == 64</span></span><br><span class="line"><span class="meta">#  <span class="meta-keyword">define</span> __FD_ZERO_STOS <span class="meta-string">"stosq"</span></span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">else</span></span></span><br><span class="line"><span class="meta">#  <span class="meta-keyword">define</span> __FD_ZERO_STOS <span class="meta-string">"stosl"</span></span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FD_ZERO(fdsp) \</span></span><br><span class="line">  <span class="keyword">do</span> &#123;									      \</span><br><span class="line">    <span class="keyword">int</span> __d0, __d1;							      \</span><br><span class="line">    __asm__ __volatile__ (<span class="string">"cld; rep; "</span> __FD_ZERO_STOS			      \</span><br><span class="line">			  : <span class="string">"=c"</span> (__d0), <span class="string">"=D"</span> (__d1)			      \</span><br><span class="line">			  : <span class="string">"a"</span> (<span class="number">0</span>), <span class="string">"0"</span> (<span class="keyword">sizeof</span> (fd_set)		      \</span><br><span class="line">					  / <span class="keyword">sizeof</span> (__fd_mask)),	      \</span><br><span class="line">			    <span class="string">"1"</span> (&amp;__FDS_BITS (fdsp)[<span class="number">0</span>])			      \</span><br><span class="line">			  : <span class="string">"memory"</span>);					      \</span><br><span class="line">  &#125; <span class="keyword">while</span> (<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span>	<span class="comment">/* ! GNU CC */</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* We don't use `memset' because this would require a prototype and</span></span><br><span class="line"><span class="comment">   the array isn't too big.  */</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> __FD_ZERO(set)  \</span></span><br><span class="line">  <span class="keyword">do</span> &#123;									      \</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> __i;							      \</span><br><span class="line">    fd_set *__arr = (<span class="built_in">set</span>);						      \</span><br><span class="line">    <span class="keyword">for</span> (__i = <span class="number">0</span>; __i &lt; <span class="keyword">sizeof</span> (fd_set) / <span class="keyword">sizeof</span> (__fd_mask); ++__i)	      \</span><br><span class="line">      __FDS_BITS (__arr)[__i] = <span class="number">0</span>;					      \</span><br><span class="line">  &#125; <span class="keyword">while</span> (<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span>	<span class="comment">/* GNU CC */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __FD_SET(d, set) \</span></span><br><span class="line">  ((<span class="keyword">void</span>) (__FDS_BITS (<span class="built_in">set</span>)[__FD_ELT (d)] |= __FD_MASK (d)))</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __FD_CLR(d, set) \</span></span><br><span class="line">  ((<span class="keyword">void</span>) (__FDS_BITS (<span class="built_in">set</span>)[__FD_ELT (d)] &amp;= ~__FD_MASK (d)))</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __FD_ISSET(d, set) \</span></span><br><span class="line">  ((__FDS_BITS (<span class="built_in">set</span>)[__FD_ELT (d)] &amp; __FD_MASK (d)) != <span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/FD-宏/" rel="tag"># FD_宏</a>
+          
+            <a href="/tags/位数组/" rel="tag"># 位数组</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/29/浅谈dns解析与劫持/" rel="next" title="浅谈dns解析与劫持">
+                <i class="fa fa-chevron-left"></i> 浅谈dns解析与劫持
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/12/03/浅谈aria2框架/" rel="prev" title="浅谈aria2框架">
+                浅谈aria2框架 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#一、FD-四个宏介绍"><span class="nav-text">一、FD_四个宏介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、FD-宏相关实现"><span class="nav-text">二、FD_宏相关实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、总结"><span class="nav-text">三、总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、完整源码"><span class="nav-text">四、完整源码</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

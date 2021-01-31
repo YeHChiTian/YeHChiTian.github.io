@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="数字签名,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言最近有接触到关于https这块内容，涉及到证书以及通信解密问题，因此学习记录一下。 本文主要记录数字证书以及数字签名的原理。 一、数字证书以及数字签名存在意义我们将信息传递给其他人，如何让别人相信这是我们所发出的信息。 或者说， 当我们从A接受到某个信息时， 我们怎么知道信息是A发出来的， 这是信任的问题。 以前，我们解决这个问题，会在信息的后面，附上我们的亲笔签名， 比如写信在最后会有自己">
+<meta name="keywords" content="数字签名">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈数字证书以及数字签名的原理">
+<meta property="og:url" content="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言最近有接触到关于https这块内容，涉及到证书以及通信解密问题，因此学习记录一下。 本文主要记录数字证书以及数字签名的原理。 一、数字证书以及数字签名存在意义我们将信息传递给其他人，如何让别人相信这是我们所发出的信息。 或者说， 当我们从A接受到某个信息时， 我们怎么知道信息是A发出来的， 这是信任的问题。 以前，我们解决这个问题，会在信息的后面，附上我们的亲笔签名， 比如写信在最后会有自己">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/主题照片.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/图3-1windows自带证书.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/图3-2chrome自带跟证书.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/图4-1chrome信任github.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/图4-2github的数字证书.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/图4-3github数字证书的信任机构.jpg">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.516Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈数字证书以及数字签名的原理">
+<meta name="twitter:description" content="前言最近有接触到关于https这块内容，涉及到证书以及通信解密问题，因此学习记录一下。 本文主要记录数字证书以及数字签名的原理。 一、数字证书以及数字签名存在意义我们将信息传递给其他人，如何让别人相信这是我们所发出的信息。 或者说， 当我们从A接受到某个信息时， 我们怎么知道信息是A发出来的， 这是信任的问题。 以前，我们解决这个问题，会在信息的后面，附上我们的亲笔签名， 比如写信在最后会有自己">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/主题照片.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/">
+
+
+
+
+
+  <title>浅谈数字证书以及数字签名的原理 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/16/浅谈数字证书以及数字签名的原理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">浅谈数字证书以及数字签名的原理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2020-03-16T19:37:27+08:00">
+                2020-03-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/网络安全/" itemprop="url" rel="index">
+                    <span itemprop="name">网络安全</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><img src="/2020/03/16/浅谈数字证书以及数字签名的原理/主题照片.jpg" alt="1"></p>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>最近有接触到关于https这块内容，涉及到证书以及通信解密问题，因此学习记录一下。 本文主要记录数字证书以及数字签名的原理。</p>
+<h1 id="一、数字证书以及数字签名存在意义"><a href="#一、数字证书以及数字签名存在意义" class="headerlink" title="一、数字证书以及数字签名存在意义"></a>一、数字证书以及数字签名存在意义</h1><p>我们将信息传递给其他人，如何让别人相信这是我们所发出的信息。 或者说， 当我们从A接受到某个信息时， 我们怎么知道信息是A发出来的， 这是信任的问题。</p>
+<p>以前，我们解决这个问题，会在信息的后面，附上我们的亲笔签名， 比如写信在最后会有自己亲笔签名， 这样别人看到签名，就会相信这封信是我们写的。在互联网上，如何解决这个问题呢？就出现了数字证书以及数字签名。</p>
+<p>简单说，数字证书以及数字签名就是帮助通信双方在互联网上建立一种信任的机制吧。</p>
+<h1 id="二、互联网上信任机制建立"><a href="#二、互联网上信任机制建立" class="headerlink" title="二、互联网上信任机制建立"></a>二、互联网上信任机制建立</h1><p>在互联网上，通常需要找<strong>CA（CA, Certificate Authority，证书颁发机构）</strong>认证中心，协助双方建立一种信任机制。CA证书认证的作用主要是帮助别人进行数字签名，CA使用自己的<strong>私钥</strong>帮助其他人的数字证书签名,即也是加密，其他人使用使用CA的<strong>公钥</strong>对证书进行解密（前提大家都拥有CA的公钥，后面补充说明），就可以获得对应可信任的数字证书。因为经过CA签名的数字证书，我们都会信任他。</p>
+<p>下面说明A公司的数字证书经过CA签名之后，如何获得用户B的信任。</p>
+<ul>
+<li>第一步：A将公钥(证书主要的对象，public key)以及A公司名称等其它相关信息，生成一个数字证书（证书内容大致如下），告诉CA，然后CA使用私钥对其进行 “签名”， 即数字签名（也是加密意思，签名之后，只有拥有CA的公钥才可以解开这个数字证书），最终生成一份关于A签了名的数字证书， 并将其颁发给A。</li>
+</ul>
+<blockquote>
+<p>×××××××××××××××证书内容开始×××××××××××××××××</p>
+<p>Issuer : SecureTrust CA</p>
+<p>Subject : ABC Company</p>
+<p>Valid from ： 某个日期</p>
+<p>Valid to： 某个日期</p>
+<p>Public Key : 一串很长的数字</p>
+<p>…… 其它的一些证书内容……</p>
+</blockquote>
+<ul>
+<li><p>第二步：A拿到CA签名的数字证书之后，使用CA公钥会对证书做校验，因为本身有用CA的公钥。经验校验之后。当A跟B通信前，A会将经过签名的数字证书发送给B。</p>
+</li>
+<li><p>第三步：B接收到A的数字证书之后，会使用CA的公钥对A的数字证书进行解密，如果正确，那么将得到A（公钥）。</p>
+</li>
+<li><p>第四步：A和B后续通信，A将使用自己的私钥加密信息，Ｂ使用A的公钥解密信息。反之亦可，Ｂ使用A的公钥加密信息，Ａ使用自己的私钥解密信息。在https通信过程中，A和B还会约定生成一把对称秘钥，加密后续https通信的所有内容(因为对称密码加密解密时间更快，效率更高)。</p>
+</li>
+</ul>
+<p>详细的过程可以参考阮一峰老师：<a href="http://www.ruanyifeng.com/blog/2011/08/what_is_a_digital_signature.html" target="_blank" rel="noopener"><font color="#0000FF">数字签名是什么？</font></a></p>
+<p>或者更加通俗的：<a href="https://www.cnblogs.com/JeffreySun/archive/2010/06/24/1627247.html" target="_blank" rel="noopener"><font color="#0000FF">数字证书原理</font></a></p>
+<h1 id="三、CA证书中心"><a href="#三、CA证书中心" class="headerlink" title="三、CA证书中心"></a>三、CA证书中心</h1><p>系统会自带许多权威的证书， 这些证书称为“根证书”（这些根证书同样都包含有公钥，没有经过签名，因此我们直接拥有他们的公钥），这些证书机构会给企业签名证书，但凡经过这些权威证书机构签名的数字证书，我们就认为该企业的证书是可信的。（因为一旦企业的证书出了问题，这些权威机构是要付责任的，毕竟权威机构签名认证是付费的，所谓拿人钱财替人消灾），当拿到被这些权威机构签名的数字证书，我们可以使用权威机构的证书（自带的）自带的公钥，来对这个数字证书进行解密，从而获取这个数字证书所包含的信息（公钥）。</p>
+<p>总之，根证书主要是验证数字证书的真伪。</p>
+<p><strong>windows自带的根证书</strong></p>
+<p>查看方式dos运行：certmgr.msc</p>
+<p><img src="/2020/03/16/浅谈数字证书以及数字签名的原理/图3-1windows自带证书.jpg" alt="图3-1"></p>
+<p><strong>linux自带的证书</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">cong@pc:~$ ls /usr/share/ca-certificates/mozilla/Di* </span><br><span class="line">/usr/share/ca-certificates/mozilla/DigiCert_Assured_ID_Root_CA.crt</span><br><span class="line">/usr/share/ca-certificates/mozilla/DigiCert_Assured_ID_Root_G2.crt</span><br><span class="line">/usr/share/ca-certificates/mozilla/DigiCert_Assured_ID_Root_G3.crt</span><br><span class="line">/usr/share/ca-certificates/mozilla/DigiCert_Global_Root_CA.crt</span><br><span class="line">/usr/share/ca-certificates/mozilla/DigiCert_Global_Root_G2.crt</span><br><span class="line">/usr/share/ca-certificates/mozilla/DigiCert_Global_Root_G3.crt</span><br><span class="line">/usr/share/ca-certificates/mozilla/DigiCert_High_Assurance_EV_Root_CA.crt</span><br><span class="line">/usr/share/ca-certificates/mozilla/DigiCert_Trusted_Root_G4.crt</span><br><span class="line">cong@pc:~$</span><br></pre></td></tr></table></figure>
+<p><strong>chrome自带根证书</strong></p>
+<p><img src="/2020/03/16/浅谈数字证书以及数字签名的原理/图3-2chrome自带跟证书.png" alt="图3-2"></p>
+<h1 id="四、在浏览器上证书验证流程"><a href="#四、在浏览器上证书验证流程" class="headerlink" title="四、在浏览器上证书验证流程"></a>四、在浏览器上证书验证流程</h1><p>比如当我们访问<a href="https://github.com/" target="_blank" rel="noopener">https://github.com/</a>  会先获取对方的数字证书。然后查看证书签名的机构，是否在浏览器能够信任的列表之后。比如org-AC Camerfirma S.A， org-ACCV等机构。</p>
+<p> 如果其数字证书是在浏览器所信任的根证书所签名的，那么我们就可以安全的访问此网站（因为根证书也包含了其机构的公钥，我们可以从中获取该机构公钥，从而解密其签名的数字证书， 最终获得我们想访问的网站的公钥（<a href="https://github.com/" target="_blank" rel="noopener">https://github.com/</a> )) ， 而且会将其数字证书记录信任，以方便下次可以直接访问。</p>
+<p>如果没有数字证书，或者数字证书索签名的机构不在浏览器列表之中，那么将会弹出类似  “该网站不是可信任”之类的的警告。</p>
+<p><strong>访问github.com</strong>， 注意到chrome浏览器已经将其标注安全(secure), 其数字证书是有效的。</p>
+<p><img src="/2020/03/16/浅谈数字证书以及数字签名的原理/图4-1chrome信任github.jpg" alt="图4-1"></p>
+<p><strong>github的数字证书</strong>， 注意到其签名的机构是<strong>DigiCert Inc</strong> </p>
+<p><img src="/2020/03/16/浅谈数字证书以及数字签名的原理/图4-2github的数字证书.jpg" alt="图4-2"></p>
+<p>寻找chrome浏览器包含了对github.com签名的根证书机构<strong>DigCert Inc</strong></p>
+<p><img src="/2020/03/16/浅谈数字证书以及数字签名的原理/图4-3github数字证书的信任机构.jpg" alt></p>
+<h1 id="五、小结"><a href="#五、小结" class="headerlink" title="五、小结"></a>五、小结</h1><p>本文主要阐述了数字证书以及数字签名的大致原理。</p>
+<p>系统内置了许多根证书，这些证书的作用验证数字在证书的有效性。</p>
+<p>企业(也可以是个人用户)的数字证书包含了公钥等相关信息，CA机构对数字证书进行签名，即数字签名，再将其签名之后的数字证书颁发給该企业。企业拿到数字证书验证之后，就可以将其发给其他人，其他人使用CA的公钥对数字证书进行解密，从而获取到企业的公钥。</p>
+<p>后续，企业就可以跟其他人（拥有了企业公钥）进行安全通信。</p>
+<h1 id="六、引用"><a href="#六、引用" class="headerlink" title="六、引用"></a>六、引用</h1><p>1.<a href="http://www.ruanyifeng.com/blog/2011/08/what_is_a_digital_signature.html" target="_blank" rel="noopener"><font color="#0000FF">数字签名是什么？</font></a></p>
+<p>2.<a href="https://www.cnblogs.com/JeffreySun/archive/2010/06/24/1627247.html" target="_blank" rel="noopener"><font color="#0000FF">数字证书原理</font></a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/数字签名/" rel="tag"># 数字签名</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/01/05/基于多线程的udp协议accept模型/" rel="next" title="基于多线程的udp协议accept模型">
+                <i class="fa fa-chevron-left"></i> 基于多线程的udp协议accept模型
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/03/27/libuv多线程中使用uv-accept/" rel="prev" title="libuv多线程中使用uv_accept">
+                libuv多线程中使用uv_accept <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#一、数字证书以及数字签名存在意义"><span class="nav-text">一、数字证书以及数字签名存在意义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、互联网上信任机制建立"><span class="nav-text">二、互联网上信任机制建立</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、CA证书中心"><span class="nav-text">三、CA证书中心</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、在浏览器上证书验证流程"><span class="nav-text">四、在浏览器上证书验证流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#五、小结"><span class="nav-text">五、小结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#六、引用"><span class="nav-text">六、引用</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

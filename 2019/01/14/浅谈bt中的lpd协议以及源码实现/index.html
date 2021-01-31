@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="网络协议,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言　　在bt（bittorrent）软件中，寻找节点信息（peer）是一项非常重要的工作，只有寻找到足够多peer，才能更好发挥出p2p网络优势，从而提高bt下载速度。获取节点信息主要通过DHT（(Distributed Hash Table）、Tracker服务器、lpd（Local Peer Discovery）方式 ，本章节主要讨论lpd协议以及其协议在aria2c中的源码实现。 1、lp">
+<meta name="keywords" content="网络协议">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈bt中的lpd协议以及源码实现">
+<meta property="og:url" content="http://yoursite.com/2019/01/14/浅谈bt中的lpd协议以及源码实现/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言　　在bt（bittorrent）软件中，寻找节点信息（peer）是一项非常重要的工作，只有寻找到足够多peer，才能更好发挥出p2p网络优势，从而提高bt下载速度。获取节点信息主要通过DHT（(Distributed Hash Table）、Tracker服务器、lpd（Local Peer Discovery）方式 ，本章节主要讨论lpd协议以及其协议在aria2c中的源码实现。 1、lp">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2019/01/14/浅谈bt中的lpd协议以及源码实现/图2-1lpd消息格式.png">
+<meta property="og:image" content="http://yoursite.com/2019/01/14/浅谈bt中的lpd协议以及源码实现/图2-2使用wireshark抓lpd发送的数据包.png">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.505Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈bt中的lpd协议以及源码实现">
+<meta name="twitter:description" content="前言　　在bt（bittorrent）软件中，寻找节点信息（peer）是一项非常重要的工作，只有寻找到足够多peer，才能更好发挥出p2p网络优势，从而提高bt下载速度。获取节点信息主要通过DHT（(Distributed Hash Table）、Tracker服务器、lpd（Local Peer Discovery）方式 ，本章节主要讨论lpd协议以及其协议在aria2c中的源码实现。 1、lp">
+<meta name="twitter:image" content="http://yoursite.com/2019/01/14/浅谈bt中的lpd协议以及源码实现/图2-1lpd消息格式.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/01/14/浅谈bt中的lpd协议以及源码实现/">
+
+
+
+
+
+  <title>浅谈bt中的lpd协议以及源码实现 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/01/14/浅谈bt中的lpd协议以及源码实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">浅谈bt中的lpd协议以及源码实现</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-01-14T23:20:00+08:00">
+                2019-01-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Aria2/" itemprop="url" rel="index">
+                    <span itemprop="name">Aria2</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>　　在bt（bittorrent）软件中，寻找节点信息（peer）是一项非常重要的工作，只有寻找到足够多peer，才能更好发挥出p2p网络优势，从而提高bt下载速度。获取节点信息主要通过DHT（(Distributed Hash Table）、Tracker服务器、lpd（Local Peer Discovery）方式 ，本章节主要讨论lpd协议以及其协议在aria2c中的源码实现。</p>
+<h1 id="1、lpd协议"><a href="#1、lpd协议" class="headerlink" title="1、lpd协议"></a>1、lpd协议</h1><p>　　lpd协议是基于udp多播（http over udp-multicast，格式有点像http报文的udp多播）的应用程协议，提供了一种类似ssdp（Simple Service Discovery Protocol）的机制，在本地网络中向一个特定群体宣布它的存在，也从这个群体中获取其他成员的节点信息。</p>
+<h1 id="2、lpd协议消息格式"><a href="#2、lpd协议消息格式" class="headerlink" title="2、lpd协议消息格式"></a>2、lpd协议消息格式</h1><p>　　使用的多播地址和端口号为239.192.152.143:6771，其协议消息格式如下图2-1所示（发送和接收都是这个数据格式）。</p>
+<p><img src="/2019/01/14/浅谈bt中的lpd协议以及源码实现/图2-1lpd消息格式.png" alt="图2-1"></p>
+<center>图2-1 lpd协议消息格式</center>
+
+<p><strong>Host</strong>:表示主机多播地址和端口号。<br><strong>Port</strong>:表示bt端口。<br><strong>Infohash</strong>:表示种子的hash值，代表一种资源的标志。</p>
+<p>　　另外，使用wireshark抓lpd协议的数据包，数据有些奇怪，下图2-2是使用wireshark抓取发送lpd消息的数据包，其中的port表示bt端口为0，这个是不正确，我还特意调试，每次发现程序都有发送正确的bt端口号，至于为什么抓到的包总是显示0，暂时也没有搞清楚。</p>
+<p><img src="/2019/01/14/浅谈bt中的lpd协议以及源码实现/图2-2使用wireshark抓lpd发送的数据包.png" alt></p>
+<center>图2-2 使用wireshark抓取发送lpd消息的数据包</center>
+
+<h1 id="3、lpd协议的特点"><a href="#3、lpd协议的特点" class="headerlink" title="3、lpd协议的特点"></a>3、lpd协议的特点</h1><p><strong>发送消息</strong>: 每隔5分钟向特定群体（多播群体）发送一个消息，以表明它的存在。 为了避免发送大量消息（多播风暴，multicast storms），应该每分钟发送不超过一个消息，这种是针对发送消息失败的情况。</p>
+<p><strong>接收消息</strong>: 收到lpd消息，我们将此消息的源地址作为新的peer的IP地址，与此消息的bt端口，一起组合成一个新的peer节点。</p>
+<p>note: 自己发往多播地址的消息，自己也可以收到。</p>
+<h1 id="4、lpd协议编程实现大致流程"><a href="#4、lpd协议编程实现大致流程" class="headerlink" title="4、lpd协议编程实现大致流程"></a>4、lpd协议编程实现大致流程</h1><h2 id="（1）lpd发送消息"><a href="#（1）lpd发送消息" class="headerlink" title="（1）lpd发送消息"></a>（1）lpd发送消息</h2><ol>
+<li><p>创建套接字，并且设置其多播ttl，loop等。</p>
+</li>
+<li><p>创建发送消息内容。（对于lpd，其消息内容字段基本不变）。 </p>
+</li>
+<li><p>定时向多播地址发送此消息。</p>
+</li>
+</ol>
+<h2 id="（2）lpd接收消息"><a href="#（2）lpd接收消息" class="headerlink" title="（2）lpd接收消息"></a>（2）lpd接收消息</h2><ol>
+<li><p>创建套接字，bind绑定到多播地址中（意味着这个套接字只接收发往这个多播地址的消息，也就是发往这个多播地址消息，这个套接字是可以接收）。</p>
+</li>
+<li><p>将自己加入多播中，成为其中一员，这样才可以接收多播消息（多播消息，即这个多播群体中某一成员发往这个多播地址的消息）。 </p>
+</li>
+<li><p>将接收到的多播消息的源地址作为新的peer节点的IP地址，与此消息的bt端口一起组成新的peer节点。</p>
+</li>
+<li><p>将这个peer保存起来，bt尝试连接这个节点。</p>
+</li>
+</ol>
+<h1 id="5、在aria2c中分析lpd协议的源码实现"><a href="#5、在aria2c中分析lpd协议的源码实现" class="headerlink" title="5、在aria2c中分析lpd协议的源码实现"></a>5、在aria2c中分析lpd协议的源码实现</h1><h2 id="（1）lpd接收消息"><a href="#（1）lpd接收消息" class="headerlink" title="（1）lpd接收消息"></a>（1）lpd接收消息</h2><p>1、首先主要判断是否有启动lpd参数,如果开启接着创建一个LpdMessageReceiver对象，用于lpd接收消息。创建LpdReceiveMessageCommand命令，用于监听lpd的消息。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//是否启动lpd, 另外如果torrent是私有的,那么其peer不起作用.</span></span><br><span class="line"><span class="keyword">if</span> (option-&gt;getAsBool(PREF_BT_ENABLE_LPD) &amp;&amp; btReg-&gt;getTcpPort() &amp;&amp;</span><br><span class="line">    (metadataGetMode || !torrentAttrs-&gt;privateTorrent))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!btReg-&gt;getLpdMessageReceiver())</span><br><span class="line">    &#123;</span><br><span class="line">        A2_LOG_INFO(<span class="string">"Initializing LpdMessageReceiver."</span>);</span><br><span class="line">        <span class="comment">//创建一个LpdMessageReceiver,指定特定的multicast IP,端口</span></span><br><span class="line">        <span class="keyword">auto</span> receiver = <span class="built_in">std</span>::make_shared&lt;LpdMessageReceiver&gt;(LPD_MULTICAST_ADDR,  LPD_MULTICAST_PORT);</span><br><span class="line">        <span class="keyword">bool</span> initialized = <span class="literal">false</span>;</span><br><span class="line">        <span class="comment">//获取指定的lpd接口,默认不指定.</span></span><br><span class="line">        <span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; lpdInterface =  e-&gt;getOption()-&gt;get(PREF_BT_LPD_INTERFACE);</span><br><span class="line">        <span class="keyword">if</span> (lpdInterface.empty()) &#123;</span><br><span class="line">            <span class="comment">//初始化lpd接收消息</span></span><br><span class="line">            <span class="keyword">if</span> (receiver-&gt;init(<span class="string">""</span>)) &#123;</span><br><span class="line">                initialized = <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">auto</span> ifAddrs = SocketCore::getInterfaceAddress(lpdInterface, AF_INET,  AI_NUMERICHOST);</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; soaddr : ifAddrs) &#123;</span><br><span class="line">                <span class="keyword">char</span> host[NI_MAXHOST];</span><br><span class="line">                <span class="keyword">if</span> (inetNtop(AF_INET, &amp;soaddr.su.in.sin_addr, host, <span class="keyword">sizeof</span>(host)) ==</span><br><span class="line">                    <span class="number">0</span> &amp;&amp;</span><br><span class="line">                    receiver-&gt;init(host)) &#123;</span><br><span class="line">                    initialized = <span class="literal">true</span>;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (initialized) &#123;</span><br><span class="line">            <span class="comment">//创建并且初始化LpdMessageReceiver成功,将这个对象保存到btReg中.</span></span><br><span class="line">            btReg-&gt;setLpdMessageReceiver(receiver);</span><br><span class="line">            A2_LOG_INFO(fmt(<span class="string">"LpdMessageReceiver initialized. multicastAddr=%s:%u,"</span></span><br><span class="line">                            <span class="string">" localAddr=%s"</span>,</span><br><span class="line">                            LPD_MULTICAST_ADDR, LPD_MULTICAST_PORT,</span><br><span class="line">                            receiver-&gt;getLocalAddress().c_str()));</span><br><span class="line">            <span class="comment">//创建一个LpdReceiveMessageCommand</span></span><br><span class="line">            e-&gt;addCommand(make_unique&lt;LpdReceiveMessageCommand&gt;(e-&gt;newCUID(), receiver, e));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            A2_LOG_INFO(<span class="string">"LpdMessageReceiver not initialized."</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//如果接收对象创建成功了. 接着创建lpd发送对象.</span></span><br><span class="line">    <span class="keyword">if</span> (btReg-&gt;getLpdMessageReceiver()) &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">char</span>* infoHash =  bittorrent::getInfoHash(requestGroup-&gt;getDownloadContext());</span><br><span class="line">        A2_LOG_INFO(<span class="string">"Initializing LpdMessageDispatcher."</span>);</span><br><span class="line">        <span class="keyword">auto</span> dispatcher = <span class="built_in">std</span>::make_shared&lt;LpdMessageDispatcher&gt;(</span><br><span class="line">            <span class="built_in">std</span>::<span class="built_in">string</span>(&amp;infoHash[<span class="number">0</span>], &amp;infoHash[INFO_HASH_LENGTH]),</span><br><span class="line">            btReg-&gt;getTcpPort(), LPD_MULTICAST_ADDR, LPD_MULTICAST_PORT);</span><br><span class="line">        <span class="keyword">if</span> (dispatcher-&gt;init(btReg-&gt;getLpdMessageReceiver()-&gt;getLocalAddress(),</span><br><span class="line">                             <span class="comment">/*ttl*/</span> <span class="number">1</span>, <span class="comment">/*loop*/</span> <span class="number">1</span>)) &#123;</span><br><span class="line">            A2_LOG_INFO(<span class="string">"LpdMessageDispatcher initialized."</span>);</span><br><span class="line">            <span class="keyword">auto</span> cmd =</span><br><span class="line">                make_unique&lt;LpdDispatchMessageCommand&gt;(e-&gt;newCUID(), dispatcher, e);</span><br><span class="line">            cmd-&gt;setBtRuntime(btRuntime);</span><br><span class="line">            e-&gt;addCommand(<span class="built_in">std</span>::move(cmd));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            A2_LOG_INFO(<span class="string">"LpdMessageDispatcher not initialized."</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>2、首先创建一个LpdMessageReceiver对象，注意此时用的地址是多播地址和端口。多播地址：描述一组接收者。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">constexpr</span> <span class="keyword">const</span> <span class="keyword">char</span> LPD_MULTICAST_ADDR[] = <span class="string">"239.192.152.143"</span>;</span><br><span class="line"><span class="keyword">constexpr</span> <span class="keyword">uint16_t</span> LPD_MULTICAST_PORT = <span class="number">6771</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LpdMessageReceiver::LpdMessageReceiver(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; multicastAddress,</span><br><span class="line">                                       <span class="keyword">uint16_t</span> multicastPort)</span><br><span class="line">    : multicastAddress_(multicastAddress), multicastPort_(multicastPort)</span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>3、lpd接收器的初始化。主要是绑定多播地址（为了只接受发往这个多播目的地址的信息）。 为了可以接收到多播消息，还应该将自己加入到多播地址中。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">LpdMessageReceiver::init</span><span class="params">(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; localAddr)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    socket_ = <span class="built_in">std</span>::make_shared&lt;SocketCore&gt;(SOCK_DGRAM);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> __MINGW32__</span></span><br><span class="line">    <span class="comment">// Binding multicast address fails under Windows.</span></span><br><span class="line">    socket_-&gt;bindWithFamily(multicastPort_, AF_INET);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span>  <span class="comment">// !__MINGW32__</span></span></span><br><span class="line">    <span class="comment">//绑定了IP和port, 表明这个套接字只接受(发往这个IP和端口的)地址.    (可能多播机制起到这个转发作用,会将各个消息转发出去)</span></span><br><span class="line">    socket_-&gt;bind(multicastAddress_.c_str(), multicastPort_, AF_INET);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span> <span class="comment">// !__MINGW32__</span></span></span><br><span class="line">    A2_LOG_DEBUG(fmt(<span class="string">"Joining multicast group. %s:%u, localAddr=%s"</span>,</span><br><span class="line">                     multicastAddress_.c_str(), multicastPort_,</span><br><span class="line">                     localAddr.c_str()));</span><br><span class="line">    <span class="comment">//将本地加入组播中(这样才有可有收到组播其他成员发送多来的消息.)</span></span><br><span class="line">    socket_-&gt;joinMulticastGroup(multicastAddress_, multicastPort_, localAddr);</span><br><span class="line">    socket_-&gt;setNonBlockingMode();</span><br><span class="line">    localAddress_ = localAddr;</span><br><span class="line">    A2_LOG_INFO(fmt(<span class="string">"Listening multicast group (%s:%u) packet"</span>,</span><br><span class="line">                    multicastAddress_.c_str(), multicastPort_));</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (RecoverableException&amp; e) &#123;</span><br><span class="line">    A2_LOG_ERROR_EX(<span class="string">"Failed to initialize LPD message receiver."</span>, e);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>4、初始化成功之后，那么创建一个LpdReceiveMessageCommand用于监听lpd的消息。首先将对应的套接字注册到poll事件池中。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">LpdReceiveMessageCommand::LpdReceiveMessageCommand(</span><br><span class="line">    <span class="keyword">cuid_t</span> cuid, <span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">shared_ptr</span>&lt;LpdMessageReceiver&gt;&amp; receiver,</span><br><span class="line">    DownloadEngine* e)</span><br><span class="line">    : Command(cuid), receiver_(receiver), e_(e)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">//将套接字添加到poll,准备读取数据.</span></span><br><span class="line">  e_-&gt;addSocketForReadCheck(receiver_-&gt;getSocket(), <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>5、LpdReceiveMessageCommand中接收消息，然后保存peer。这个command主要是接收消息，消息内容保存了peer和hash值。然后将peer保存到hash对应的资源中。 注意，每次最多接收20个peer的消息。</p>
+<p>（note: 这个peer的端口是发送者额外提供的bt端口。不是发送者发送此消息的端口）</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//主要是将收到其他peer信息,将这个peer信息保存到对应资源的peerStroage中</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">LpdReceiveMessageCommand::execute</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (e_-&gt;getRequestGroupMan()-&gt;downloadFinished() || e_-&gt;isHaltRequested()) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">size_t</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; ++i) &#123;</span><br><span class="line">	  <span class="comment">//收到LpdMessage消息,保存了其peer和hash值信息.</span></span><br><span class="line">    <span class="keyword">auto</span> m = receiver_-&gt;receiveMessage();</span><br><span class="line">    <span class="keyword">if</span> (!m) &#123;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">auto</span>&amp; reg = e_-&gt;getBtRegistry();</span><br><span class="line">    <span class="comment">//获取哈希对应种子的下载上下文对象..</span></span><br><span class="line">    <span class="keyword">auto</span>&amp; dctx = reg-&gt;getDownloadContext(m-&gt;infoHash);</span><br><span class="line">    <span class="keyword">if</span> (!dctx) &#123;</span><br><span class="line">      A2_LOG_DEBUG(fmt(<span class="string">"Download Context is null for infohash=%s."</span>,</span><br><span class="line">                       util::toHex(m-&gt;infoHash).c_str()));</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//如果这个种子是私有的,忽略的peer.</span></span><br><span class="line">    <span class="keyword">if</span> (bittorrent::getTorrentAttrs(dctx)-&gt;privateTorrent) &#123;</span><br><span class="line">      A2_LOG_DEBUG(<span class="string">"Ignore LPD message because the torrent is private."</span>);</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    RequestGroup* group = dctx-&gt;getOwnerRequestGroup();</span><br><span class="line">    assert(group);</span><br><span class="line">    <span class="keyword">auto</span> btobj = reg-&gt;get(group-&gt;getGID());</span><br><span class="line">    assert(btobj);</span><br><span class="line">    <span class="keyword">auto</span>&amp; peerStorage = btobj-&gt;peerStorage;</span><br><span class="line">    assert(peerStorage);</span><br><span class="line">    <span class="keyword">auto</span>&amp; peer = m-&gt;peer;</span><br><span class="line">    <span class="comment">//增加此peer.</span></span><br><span class="line">    <span class="keyword">if</span> (peerStorage-&gt;addPeer(peer)) &#123;</span><br><span class="line">      A2_LOG_DEBUG(fmt(<span class="string">"LPD peer %s:%u local=%d added."</span>,</span><br><span class="line">                       peer-&gt;getIPAddress().c_str(), peer-&gt;getPort(),</span><br><span class="line">                       peer-&gt;isLocalPeer() ? <span class="number">1</span> : <span class="number">0</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      A2_LOG_DEBUG(fmt(<span class="string">"LPD peer %s:%u local=%d not added."</span>,</span><br><span class="line">                       peer-&gt;getIPAddress().c_str(), peer-&gt;getPort(),</span><br><span class="line">                       peer-&gt;isLocalPeer() ? <span class="number">1</span> : <span class="number">0</span>));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  e_-&gt;addCommand(<span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;Command&gt;(<span class="keyword">this</span>));</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="（2）lpd发送消息"><a href="#（2）lpd发送消息" class="headerlink" title="（2）lpd发送消息"></a>（2）lpd发送消息</h2><p>1、当lpd接收消息对象创建完成之后，那么创建lpd消息发送对象LpdMessageDispatcher。注意此时使用tcpPort端口作为这个peer的bt端口。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//如果接收对象创建成功了. 接着创建lpd发送对象.</span></span><br><span class="line"><span class="keyword">if</span> (btReg-&gt;getLpdMessageReceiver()) &#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">char</span>* infoHash =  bittorrent::getInfoHash(requestGroup-&gt;getDownloadContext());</span><br><span class="line">    A2_LOG_INFO(<span class="string">"Initializing LpdMessageDispatcher."</span>);</span><br><span class="line">    <span class="keyword">auto</span> dispatcher = <span class="built_in">std</span>::make_shared&lt;LpdMessageDispatcher&gt;(</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">string</span>(&amp;infoHash[<span class="number">0</span>], &amp;infoHash[INFO_HASH_LENGTH]),</span><br><span class="line">        btReg-&gt;getTcpPort(), LPD_MULTICAST_ADDR, LPD_MULTICAST_PORT);</span><br><span class="line">    <span class="keyword">if</span> (dispatcher-&gt;init(btReg-&gt;getLpdMessageReceiver()-&gt;getLocalAddress(),</span><br><span class="line">                         <span class="comment">/*ttl*/</span> <span class="number">1</span>, <span class="comment">/*loop*/</span> <span class="number">1</span>)) &#123;</span><br><span class="line">        A2_LOG_INFO(<span class="string">"LpdMessageDispatcher initialized."</span>);</span><br><span class="line">        <span class="keyword">auto</span> cmd =</span><br><span class="line">            make_unique&lt;LpdDispatchMessageCommand&gt;(e-&gt;newCUID(), dispatcher, e);</span><br><span class="line">        cmd-&gt;setBtRuntime(btRuntime);</span><br><span class="line">        e-&gt;addCommand(<span class="built_in">std</span>::move(cmd));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        A2_LOG_INFO(<span class="string">"LpdMessageDispatcher not initialized."</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>LpdMessageDispatcher对象的构建以及lpd消息的创建。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">LpdMessageDispatcher::LpdMessageDispatcher(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; infoHash,</span><br><span class="line">                                           <span class="keyword">uint16_t</span> port,</span><br><span class="line">                                           <span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; multicastAddress,</span><br><span class="line">                                           <span class="keyword">uint16_t</span> multicastPort,</span><br><span class="line">                                           <span class="built_in">std</span>::chrono::seconds interval)</span><br><span class="line">    : infoHash_(infoHash),</span><br><span class="line">      port_(port),</span><br><span class="line">      multicastAddress_(multicastAddress),</span><br><span class="line">      multicastPort_(multicastPort),</span><br><span class="line">      timer_(Timer::zero()),</span><br><span class="line">      interval_(<span class="built_in">std</span>::move(interval)),</span><br><span class="line">	  <span class="comment">//格式化lpd请求.</span></span><br><span class="line">      request_(bittorrent::createLpdRequest(multicastAddress_, multicastPort_, infoHash_, port_))</span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">std</span>::<span class="built_in">string</span> <span class="title">createLpdRequest</span><span class="params">(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; multicastAddress,</span></span></span><br><span class="line"><span class="function"><span class="params">                             <span class="keyword">uint16_t</span> multicastPort,</span></span></span><br><span class="line"><span class="function"><span class="params">                             <span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; infoHash, <span class="keyword">uint16_t</span> port)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">return</span> fmt(<span class="string">"BT-SEARCH * HTTP/1.1\r\n"</span></span><br><span class="line">             <span class="string">"Host: %s:%u\r\n"</span></span><br><span class="line">             <span class="string">"Port: %u\r\n"</span></span><br><span class="line">             <span class="string">"Infohash: %s\r\n"</span></span><br><span class="line">             <span class="string">"\r\n\r\n"</span>,</span><br><span class="line">             multicastAddress.c_str(), multicastPort, port,</span><br><span class="line">             util::toHex(infoHash).c_str());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>2、初始化发送lpd对象。其主要是创建套接字socket,然后设置对应套接字的ttl, loop等等。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">LpdMessageDispatcher::init</span><span class="params">(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; localAddr, <span class="keyword">unsigned</span> <span class="keyword">char</span> ttl,</span></span></span><br><span class="line"><span class="function"><span class="params">                                <span class="keyword">unsigned</span> <span class="keyword">char</span> loop)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    socket_ = <span class="built_in">std</span>::make_shared&lt;SocketCore&gt;(SOCK_DGRAM);</span><br><span class="line">    socket_-&gt;create(AF_INET);</span><br><span class="line">    A2_LOG_DEBUG(</span><br><span class="line">        fmt(<span class="string">"Setting multicast outgoing interface=%s"</span>, localAddr.c_str()));</span><br><span class="line">    socket_-&gt;setMulticastInterface(localAddr);</span><br><span class="line">    A2_LOG_DEBUG(</span><br><span class="line">        fmt(<span class="string">"Setting multicast ttl=%u"</span>, <span class="keyword">static_cast</span>&lt;<span class="keyword">unsigned</span> <span class="keyword">int</span>&gt;(ttl)));</span><br><span class="line">    socket_-&gt;setMulticastTtl(ttl);</span><br><span class="line">    A2_LOG_DEBUG(</span><br><span class="line">        fmt(<span class="string">"Setting multicast loop=%u"</span>, <span class="keyword">static_cast</span>&lt;<span class="keyword">unsigned</span> <span class="keyword">int</span>&gt;(loop)));</span><br><span class="line">    socket_-&gt;setMulticastLoop(loop);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (RecoverableException&amp; e) &#123;</span><br><span class="line">    A2_LOG_ERROR_EX(<span class="string">"Failed to initialize LpdMessageDispatcher."</span>, e);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>3、创建LpdDispatchMessageCommand用于发送消息。LpdDispatchMessageCommand中控制消息的lpd发送机制（防止频繁发送导致网络瘫痪）。</p>
+<p>1）每隔5分钟发送一次消息，发送成功则5s后再发送。</p>
+<p>2）如果发送失败，连续发送5此失败，那么也要等到5s再发送。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">LpdDispatchMessageCommand::execute</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (btRuntime_-&gt;isHalt()) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">//每间隔5分钟执行发送一次.</span></span><br><span class="line">  <span class="keyword">if</span> (dispatcher_-&gt;isAnnounceReady()) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      A2_LOG_INFO(fmt(<span class="string">"Dispatching LPD message for infohash=%s"</span>,</span><br><span class="line">                      util::toHex(dispatcher_-&gt;getInfoHash()).c_str()));</span><br><span class="line">      <span class="keyword">if</span> (dispatcher_-&gt;sendMessage()) &#123;</span><br><span class="line">        A2_LOG_INFO(<span class="string">"Sending LPD message is complete."</span>);</span><br><span class="line">        dispatcher_-&gt;resetAnnounceTimer();</span><br><span class="line">        tryCount_ = <span class="number">0</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">    	  <span class="comment">//每5分钟只能连续发送5次失败.. 5分钟过后才能继续发送请求.(除非有发送请求成功)</span></span><br><span class="line">        ++tryCount_;</span><br><span class="line">        <span class="keyword">if</span> (tryCount_ &gt;= <span class="number">5</span>) &#123;</span><br><span class="line">          A2_LOG_INFO(</span><br><span class="line">              fmt(<span class="string">"Sending LPD message %u times but all failed."</span>, tryCount_));</span><br><span class="line">          dispatcher_-&gt;resetAnnounceTimer();</span><br><span class="line">          tryCount_ = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">          A2_LOG_INFO(<span class="string">"Could not send LPD message, retry shortly."</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (RecoverableException&amp; e) &#123;</span><br><span class="line">      A2_LOG_INFO_EX(<span class="string">"Failed to send LPD message."</span>, e);</span><br><span class="line">      dispatcher_-&gt;resetAnnounceTimer();</span><br><span class="line">      tryCount_ = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  e_-&gt;addCommand(<span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;Command&gt;(<span class="keyword">this</span>));</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>4、发送消息。实质上使用了LpdMessageDispatcher对象发送消息，其目标地址是多播地址。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">LpdMessageDispatcher::sendMessage</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">return</span> socket_-&gt;writeData(request_.c_str(), request_.size(),</span><br><span class="line">                            multicastAddress_,</span><br><span class="line">                            multicastPort_) == (<span class="keyword">ssize_t</span>)request_.size();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="6、总结"><a href="#6、总结" class="headerlink" title="6、总结"></a>6、总结</h1><p>　　lpd（Local Peer Discovery）是基于udp多播协议的应用层协议，主要应用与bt软件中寻找本地peer节点，从ariac的源码实现可以看出，lpd协议相对比较简单。另外，如果在bt软件中实现这一功能，那么就需要维护不断发送和接收消息的连接，这个也是需要成本的， 毕竟天下没有免费的午餐。</p>
+<h1 id="7、参考"><a href="#7、参考" class="headerlink" title="7、参考"></a>7、参考</h1><ol>
+<li><p><a href="http://www.bittorrent.org/beps/bep_0014.html" target="_blank" rel="noopener">lpd协议官方文档</a></p>
+</li>
+<li><p><a href="https://github.com/aria2/aria2" target="_blank" rel="noopener">aria2开源项目</a></p>
+</li>
+<li><p><a href="http://www.cnblogs.com/jingliming/p/4477264.html" target="_blank" rel="noopener">udp单播、多播、广播</a></p>
+</li>
+<li><p><a href="https://note.youdao.com/web/#/file/WEBf94cc9072070e8cca29c9e584c16540a/note/WEBfc86fd305047d09e18536a9022b56bd0/" target="_blank" rel="noopener">有道云笔记</a></p>
+</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/网络协议/" rel="tag"># 网络协议</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/01/前缀树/" rel="next" title="前缀树">
+                <i class="fa fa-chevron-left"></i> 前缀树
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/02/28/在linux上交叉编译nettle库/" rel="prev" title="在linux上交叉编译nettle库">
+                在linux上交叉编译nettle库 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1、lpd协议"><span class="nav-text">1、lpd协议</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、lpd协议消息格式"><span class="nav-text">2、lpd协议消息格式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、lpd协议的特点"><span class="nav-text">3、lpd协议的特点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4、lpd协议编程实现大致流程"><span class="nav-text">4、lpd协议编程实现大致流程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#（1）lpd发送消息"><span class="nav-text">（1）lpd发送消息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#（2）lpd接收消息"><span class="nav-text">（2）lpd接收消息</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5、在aria2c中分析lpd协议的源码实现"><span class="nav-text">5、在aria2c中分析lpd协议的源码实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#（1）lpd接收消息"><span class="nav-text">（1）lpd接收消息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#（2）lpd发送消息"><span class="nav-text">（2）lpd发送消息</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6、总结"><span class="nav-text">6、总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7、参考"><span class="nav-text">7、参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

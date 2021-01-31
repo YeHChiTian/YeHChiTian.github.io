@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="udp,epoll,多线程,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言 在基于udp的多线程模型中，希望一个线程对应一个连接/用户，或者一个线程对应一个用户。然而udp是无状态连接的，因此想要实现此想法，就没有想象这么顺利。 最终参考了腾讯手Q游戏中心后台开发人员黄日成的想法，才解决了此问题。  1、场景需求我们程序希望使用udp协议监听，当有新的用户连接到来，程序可以使用一个线程与此连接通信。后续这个用户的信息都投递到这个线程当中。基本要求主要两点：  使用u">
+<meta name="keywords" content="udp,epoll,多线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于多线程的udp协议accept模型">
+<meta property="og:url" content="http://yoursite.com/2020/01/05/基于多线程的udp协议accept模型/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言 在基于udp的多线程模型中，希望一个线程对应一个连接/用户，或者一个线程对应一个用户。然而udp是无状态连接的，因此想要实现此想法，就没有想象这么顺利。 最终参考了腾讯手Q游戏中心后台开发人员黄日成的想法，才解决了此问题。  1、场景需求我们程序希望使用udp协议监听，当有新的用户连接到来，程序可以使用一个线程与此连接通信。后续这个用户的信息都投递到这个线程当中。基本要求主要两点：  使用u">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2020/01/05/基于多线程的udp协议accept模型/图2-1udp.png">
+<meta property="og:image" content="http://yoursite.com/2020/01/05/基于多线程的udp协议accept模型/图3-1udp2.png">
+<meta property="og:image" content="http://yoursite.com/2020/01/05/基于多线程的udp协议accept模型/图4-1运行结果.png">
+<meta property="og:image" content="http://yoursite.com/2020/01/05/基于多线程的udp协议accept模型/图4-2连接对应关系.png">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.497Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基于多线程的udp协议accept模型">
+<meta name="twitter:description" content="前言 在基于udp的多线程模型中，希望一个线程对应一个连接/用户，或者一个线程对应一个用户。然而udp是无状态连接的，因此想要实现此想法，就没有想象这么顺利。 最终参考了腾讯手Q游戏中心后台开发人员黄日成的想法，才解决了此问题。  1、场景需求我们程序希望使用udp协议监听，当有新的用户连接到来，程序可以使用一个线程与此连接通信。后续这个用户的信息都投递到这个线程当中。基本要求主要两点：  使用u">
+<meta name="twitter:image" content="http://yoursite.com/2020/01/05/基于多线程的udp协议accept模型/图2-1udp.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/01/05/基于多线程的udp协议accept模型/">
+
+
+
+
+
+  <title>基于多线程的udp协议accept模型 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/01/05/基于多线程的udp协议accept模型/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">基于多线程的udp协议accept模型</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2020-01-05T19:22:55+08:00">
+                2020-01-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/udp/" itemprop="url" rel="index">
+                    <span itemprop="name">udp</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><blockquote>
+<p>在基于udp的多线程模型中，希望一个线程对应一个连接/用户，或者一个线程对应一个用户。然而udp是无状态连接的，因此想要实现此想法，就没有想象这么顺利。 最终参考了腾讯手Q游戏中心后台开发人员黄日成的想法，才解决了此问题。</p>
+</blockquote>
+<h1 id="1、场景需求"><a href="#1、场景需求" class="headerlink" title="1、场景需求"></a>1、场景需求</h1><p>我们程序希望使用udp协议监听，当有新的用户连接到来，程序可以使用一个线程与此连接通信。后续这个用户的信息都投递到这个线程当中。基本要求主要两点：</p>
+<ul>
+<li>使用udp协议</li>
+<li>一个线程对应一个连接（用户）</li>
+</ul>
+<h1 id="2、预先方案"><a href="#2、预先方案" class="headerlink" title="2、预先方案"></a>2、预先方案</h1><p><strong>（1） 每个线程都监听同一个端口（udp使用SO_REUSEPORT属性,可以实现, linux 3.9以上内核），每个线程单独处理一个用户任务， 这样每个线程分工就非常明确。</strong></p>
+<p>为了充分利用多核CPU资源，进行UDP的多处理，我们可以预先创建多个线程，每个线程都创建监听相同udp socket(IP、端口相同，分别使用SO_REUSEADDR、SO_REUSEPORT属性），这样利用内核的UDP socket查找算法来达到UDP的多进程负载均衡。 </p>
+<p>一切看上去好像挺不错的，然而，这样的方案会起这样问题：</p>
+<p>由于线程中的监听的描述符是无状态的（udp），当有新用户udp连接进来的时候， 内核会根据负载均衡，唤醒其中一个线程监听的描述符。比如当用户A连接过来，内核随机唤醒线程1监听的描述符处理该连接。 当用户A第二次连接过来的时候，内核可能会唤醒线程2监听的描述符处理该连接，如下图所示。 那这样就做不到一个线程/描述符， 对应一个用户。 这样处理数据会非常麻烦。（每个线程监听相同端口，接收的数据会互相干扰）</p>
+<p><img src="/2020/01/05/基于多线程的udp协议accept模型/图2-1udp.png" alt="图2-1"></p>
+<p>当然，我们也可以将线程收到其他用户的消息投递到准确的线程中去。 比如当线程2收到用户A的消息，那么线程2将此消息内容传递到线程1中，这种投递有两种方式，如下。</p>
+<ul>
+<li>将线程2接收消息，然后将此消息传递到线程1中。（这个过程增加了一次数据的拷贝）</li>
+<li>将线程2监听的描述符投递到线程1，并且告诉线程1，有用户A的消息到达，让线程1使用线程2监听的描述符去接收用户A的消息。那么这种情况会造成其他线程可能使用自己的描述符fd接收消息，此时各个线程描述符接收消息时需要上锁。 这虽然避免了数据的拷贝，但是各个线程的描述符接收消息却需要上锁，这无疑也增大了开销。</li>
+</ul>
+<p>因此，这种方案理论上可以实现，但是会有许多额外不必要的开销。</p>
+<p><strong>（2）每个线程监听不同端口， 这样各个线程的数据就不会干扰， 每个线程就可以很好单独处理一个用户任务。</strong></p>
+<p>基于上面的问题，主要是每个线程监听同一个端口造成数据干扰，很自然我们会想，那么让每个线程监听不同端口， 这样各个线程的数据就不会干扰， 每个线程就可以很好单独处理一个用户任务。</p>
+<p>然而现实没有这么完美，这样程序需要为每个用户单独分配一个监听端口。而且还要提前告诉每个客户端，这样客户端才能连接过来，这个有点不切实际了。</p>
+<h1 id="3、最终方案"><a href="#3、最终方案" class="headerlink" title="3、最终方案"></a>3、最终方案</h1><p><strong>基于多线程的udp协议accept模型</strong></p>
+<p>因此，我们多么希望有一个方案，类似tcp协议accetp模型，按需分配tcp socket。 主线程监听，当有新的连接到达，主线程通过accept获得对应的fd，然后将此fd投递到空闲的线程中去，那么后续与这个用户的通信都可以在这个线程独立完成。</p>
+<p>然而，几经波折之后发现，在udp协议中，也有类似的accept模型，可以达到tcp协议的accetp模型效果。（参考了腾讯手Q游戏中心后台开发人员黄日成的想法）</p>
+<p>主线程使用描述符listen_fd监听指定udp端口，当有新的用户连接到达的时，主线程通过recvfrom接收消息，得到对方的ip和port，此时主线程再主动创建一个udp new_fd,也是与主线程绑定相同ip和port,  <strong>使用connect连接对方（udp中的connect作用与对方确定一个四元组的关系）,这样此连接后续的消息都会投递此new_fd中，而不会投递到主线程listen_fd中，并且new_fd除了接收此用户的消息之外，不会接收其他新用户消息，即此new_fd已经与此用户建立一一对应关系。</strong>最终，再将此new_fd投递到空闲的线程中去, 这样也可以实现与这个用户的通信都在该线程独立完成。如下图</p>
+<p><img src="/2020/01/05/基于多线程的udp协议accept模型/图3-1udp2.png" alt="图3-1"></p>
+<p>主线程监听udp指定端口，当新用户A连接到达时候，主线程创建对应的fd主动连接用户A（使用connect）, 然后在将此fd投递到线程1中，那么后续与用户A的通信都在线程1独立完成。用户A的消息也会准确投递都线程1中。</p>
+<p>上述方案，可能会有疑惑？</p>
+<ul>
+<li><strong>如何确保用户A的消息会发送到线程1的fd，而不会投递到主线程fd呢？</strong></li>
+</ul>
+<p>理论上，用户A的消息到达的时候，主线程fd和线程1 fd都可能会被唤醒去接收此消息(因为两者监听相同IP和port)，但是，线程A的fd已经明确跟用户A绑定了四元组关系，内核会优先将消息投递到已经有明确关系的连接中，因此会优先投递到线程1 fd中。假如在线程1关闭此fd，那么此时用户A的消息将会投递到主线程fd中。</p>
+<ul>
+<li><strong>当已经存在多个fd（监听相同ip和port）的情况下, 新来的链接如何确保投递到主线程中呢？</strong></li>
+</ul>
+<p>如上图中，当程序除了主线程监听之外，还维护线程1 与用户A的连接情况下，理论上，由于主线程和线程1的fd都监听相同的ip和port, 那么当新的用户B连接情况下，用户B的连接可能投递这两者其中一个。 但是由于线程1 fd已经与用户A通过connect绑定一起，不再接收其他消息，因此不会接收到新用户B连接。所以新的用户B连接只会投递到主线程的fd当中，其他子线程的fd已经与特定用户绑定在一起了。</p>
+<h1 id="4、方案验证"><a href="#4、方案验证" class="headerlink" title="4、方案验证"></a>4、方案验证</h1><p>实现步骤参考如下：（参考黄日成文章提出想法）</p>
+<ol>
+<li><p>UDP svr创建UDP socket fd,设置socket为REUSEADDR和REUSEPORT、同时bind本地地址local_addr </p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">listen_fd = socket(PF_INET, SOCK_DGRAM, <span class="number">0</span>)</span><br><span class="line">setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &amp;opt,<span class="keyword">sizeof</span>(opt))</span><br><span class="line">setsockopt(listen_fd, SOL_SOCKET, SO_REUSEPORT, &amp;opt, <span class="keyword">sizeof</span>(opt))</span><br><span class="line">bind(listen_fd, (struct sockaddr * ) &amp;local_addr, <span class="keyword">sizeof</span>(struct sockaddr))</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建epoll fd，并将listen_fd放到epoll中 并监听其可读事件</p>
+ <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">epoll_fd = epoll_create(<span class="number">1000</span>);</span><br><span class="line">ep_event.events = EPOLLIN|EPOLLET;</span><br><span class="line">ep_event.data.fd = listen_fd;</span><br><span class="line">epoll_ctl(epoll_fd , EPOLL_CTL_ADD, listen_fd, &amp;ep_event)</span><br><span class="line">in_fds = epoll_wait(epoll_fd, in_events, <span class="number">1000</span>, <span class="number">-1</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>epoll_wait返回时，如果epoll_wait返回的事件fd是listen_fd，调用recvfrom接收client第一个UDP包并根据recvfrom返回的client地址, 创建一个新的socket(new_fd)与之对应，设置new_fd为REUSEADDR和REUSEPORT、同时bind本地地址local_addr，然后connect上recvfrom返回的client地址</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">recvfrom(listen_fd, buf, <span class="keyword">sizeof</span>(buf), <span class="number">0</span>, (struct sockaddr )&amp;client_addr, &amp;client_len)</span><br><span class="line">new_fd = socket(PF_INET, SOCK_DGRAM, <span class="number">0</span>)</span><br><span class="line">setsockopt(new_fd , SOL_SOCKET, SO_REUSEADDR, &amp;reuse,<span class="keyword">sizeof</span>(reuse))</span><br><span class="line">setsockopt(new_fd , SOL_SOCKET, SO_REUSEPORT, &amp;reuse, <span class="keyword">sizeof</span>(reuse))</span><br><span class="line">bind(new_fd , (struct sockaddr ) &amp;local_addr, <span class="keyword">sizeof</span>(struct sockaddr));</span><br><span class="line">connect(new_fd , (struct sockaddr * ) &amp;client_addr, <span class="keyword">sizeof</span>(struct sockaddr)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将新创建的new_fd加入到epoll中并监听其可读等事件</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">client_ev.events = EPOLLIN;</span><br><span class="line">client_ev.data.fd = new_fd ;</span><br><span class="line">epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_fd , &amp;client_ev)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>当epoll_wait返回时，如果epoll_wait返回的事件fd是new_fd 那么就可以调用recvfrom来接收特定client的UDP包了</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">recvfrom(new_fd , recvbuf, <span class="keyword">sizeof</span>(recvbuf), <span class="number">0</span>, (struct sockaddr * )&amp;client_addr, &amp;client_len)</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p><strong>服务端程序demo</strong> ，与上面稍微基本相同，不同是每个子线程单独使用一个epoll。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 编译：g++ -std=c++11 udp_server.cc -o udp_server -lpthread</span></span><br><span class="line"><span class="comment"> * 运行： ./udp_server</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;arpa/inet.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;errno.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;netinet/in.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;signal.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/epoll.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;map&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;vector&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">//默认最多创建5个线程,一个线程对应一个连接</span></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="built_in">std</span>::thread&gt; vthreads;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> max_threads = <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">handlerNewConnect</span><span class="params">(struct sockaddr_in client_addr)</span></span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">bool</span> output_log = <span class="literal">true</span>;</span><br><span class="line"><span class="keyword">unsigned</span> short port = <span class="number">8080</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> exit_if(r, ...)                                                                          \</span></span><br><span class="line">    <span class="keyword">if</span> (r) &#123;                                                                                     \</span><br><span class="line">        <span class="built_in">printf</span>(__VA_ARGS__);                                                                     \</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"%s:%d error no: %d error msg %s\n"</span>, __FILE__, __LINE__, errno, strerror(errno)); \</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">1</span>);                                                                                 \</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">setNonBlock</span><span class="params">(<span class="keyword">int</span> fd)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> flags = fcntl(fd, F_GETFL, <span class="number">0</span>);</span><br><span class="line">    exit_if(flags &lt; <span class="number">0</span>, <span class="string">"fcntl failed"</span>);</span><br><span class="line">    <span class="keyword">int</span> r = fcntl(fd, F_SETFL, flags | O_NONBLOCK);</span><br><span class="line">    exit_if(r &lt; <span class="number">0</span>, <span class="string">"fcntl failed"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">setFdpro</span><span class="params">(<span class="keyword">int</span> fd, <span class="keyword">int</span> property)</span></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> sockopt = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">if</span> (setsockopt(fd, SOL_SOCKET, property, (<span class="keyword">void</span>* )&amp;sockopt, <span class="keyword">sizeof</span>(sockopt)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		exit_if(<span class="literal">true</span>, <span class="string">"fd = %d failed  setFdPro"</span>, fd);</span><br><span class="line">	 &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">updateEvents</span><span class="params">(<span class="keyword">int</span> efd, <span class="keyword">int</span> fd, <span class="keyword">int</span> events, <span class="keyword">int</span> op)</span> </span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> <span class="title">ev</span>;</span></span><br><span class="line">    <span class="built_in">memset</span>(&amp;ev, <span class="number">0</span>, <span class="keyword">sizeof</span>(ev));</span><br><span class="line">    ev.events = events;</span><br><span class="line">    ev.data.fd = fd;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%s fd %d events read %d write %d  to  epoll_fd %d\n"</span>, op == EPOLL_CTL_MOD ? <span class="string">"mod"</span> : <span class="string">"add"</span>, fd, ev.events &amp; EPOLLIN, ev.events &amp; EPOLLOUT,efd);</span><br><span class="line">    <span class="keyword">int</span> r = epoll_ctl(efd, op, fd, &amp;ev);</span><br><span class="line">    exit_if(r, <span class="string">"epoll_ctl failed"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//将新用户的地址投递到空闲的线程中。让空闲的线程主动去连接</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">handleAccept</span><span class="params">(<span class="keyword">int</span> efd, <span class="keyword">int</span> fd)</span> </span>&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">client_addr</span>;</span></span><br><span class="line">    <span class="keyword">socklen_t</span> rsz = <span class="keyword">sizeof</span>(client_addr);</span><br><span class="line">    <span class="keyword">size_t</span> size = <span class="number">1024</span>;</span><br><span class="line">    <span class="keyword">char</span> recvbuf[size];</span><br><span class="line">    <span class="keyword">int</span> recv_sive = recvfrom(fd,recvbuf,<span class="keyword">sizeof</span>(recvbuf),<span class="number">0</span>,(struct sockaddr * )&amp;client_addr, &amp;rsz);</span><br><span class="line">    exit_if(recv_sive&lt;<span class="number">0</span>,<span class="string">"recvfrom error, %s:%d,  error: %s"</span>,inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port),strerror(errno));</span><br><span class="line">    <span class="keyword">if</span>(output_log)&#123;</span><br><span class="line">    	<span class="built_in">printf</span>(<span class="string">"man thread recvfrom %s:%d\n"</span>,inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(vthreads.size() &lt; max_threads)&#123;</span><br><span class="line">		<span class="comment">//创建新的线程处理</span></span><br><span class="line">		<span class="function"><span class="built_in">std</span>::thread <span class="title">t</span><span class="params">(handlerNewConnect,client_addr)</span></span>;</span><br><span class="line">		vthreads.push_back(<span class="built_in">std</span>::move(t));</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">    	<span class="comment">//当线程数超过限制   直接忽略该消息。</span></span><br><span class="line">    	<span class="built_in">printf</span>(<span class="string">"because of reaching the limit number of thread , rejust from %s:%d"</span>,inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">handleRead</span><span class="params">(<span class="keyword">int</span> efd, <span class="keyword">int</span> fd)</span> </span>&#123;</span><br><span class="line">	<span class="comment">//将收到的内容回传回去</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">raddr</span>;</span></span><br><span class="line">	<span class="keyword">socklen_t</span> rsz = <span class="keyword">sizeof</span>(raddr);</span><br><span class="line">	<span class="keyword">size_t</span> size = <span class="number">1024</span>;</span><br><span class="line">	<span class="keyword">char</span> recvbuf[size];</span><br><span class="line">	<span class="keyword">int</span> recv_sive = recvfrom(fd,recvbuf,<span class="keyword">sizeof</span>(recvbuf),<span class="number">0</span>,(struct sockaddr * )&amp;raddr, &amp;rsz);</span><br><span class="line">	exit_if(recv_sive &lt; <span class="number">0</span>, <span class="string">"recvfrom error from %s:%d, reason: %s"</span>, inet_ntoa(raddr.sin_addr),ntohs(raddr.sin_port),strerror(errno));</span><br><span class="line">	<span class="keyword">if</span>(output_log)&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"read %d bytes\n"</span>, recv_sive);</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">" content is : %s\n"</span>, recvbuf);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">int</span> r = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">while</span>(recv_sive &gt; <span class="number">0</span>)&#123;</span><br><span class="line">		r = sendto(fd,recvbuf+r,recv_sive,<span class="number">0</span>,(struct sockaddr * )&amp;raddr,rsz);</span><br><span class="line">		exit_if(r&lt;<span class="number">0</span>, <span class="string">"sendto error to  %s:%d, reason: %s"</span>, inet_ntoa(raddr.sin_addr),ntohs(raddr.sin_port),strerror(errno));</span><br><span class="line">		recv_sive -= r;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">handleWrite</span><span class="params">(<span class="keyword">int</span> efd, <span class="keyword">int</span> fd)</span> </span>&#123;</span><br><span class="line">	<span class="comment">//处理写事件，  暂时留着</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">loop_once_main</span><span class="params">(<span class="keyword">int</span> efd, <span class="keyword">int</span> lfd, <span class="keyword">int</span> waitms)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> kMaxEvents = <span class="number">20</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> <span class="title">activeEvs</span>[100];</span></span><br><span class="line">    <span class="keyword">int</span> n = epoll_wait(efd, activeEvs, kMaxEvents, waitms);</span><br><span class="line">    <span class="keyword">if</span> (output_log)</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"loop_once epoll_wait return %d\n"</span>, n);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">        <span class="keyword">int</span> fd = activeEvs[i].data.fd;</span><br><span class="line">        <span class="keyword">int</span> events = activeEvs[i].events;</span><br><span class="line">        <span class="keyword">if</span> (events &amp; (EPOLLIN | EPOLLERR)) &#123;</span><br><span class="line">        	<span class="built_in">printf</span>(<span class="string">" fd = %d , read is ok\n"</span>, fd);</span><br><span class="line">            <span class="keyword">if</span> (fd == lfd) &#123;</span><br><span class="line">                handleAccept(efd, fd);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            	<span class="built_in">printf</span>(<span class="string">"fd is not listen_fd"</span>);</span><br><span class="line">                handleRead(efd, fd);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (events &amp; EPOLLOUT) &#123;</span><br><span class="line">            <span class="keyword">if</span> (output_log)</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">"handling epollout\n"</span>);</span><br><span class="line">            handleWrite(efd, fd);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            exit_if(<span class="number">1</span>, <span class="string">"unknown event"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">loop_once_child</span><span class="params">(<span class="keyword">int</span> efd, <span class="keyword">int</span> lfd, <span class="keyword">int</span> waitms)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> kMaxEvents = <span class="number">20</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> <span class="title">activeEvs</span>[100];</span></span><br><span class="line">    <span class="keyword">int</span> n = epoll_wait(efd, activeEvs, kMaxEvents, waitms);</span><br><span class="line">    <span class="keyword">if</span> (output_log)</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"loop_once epoll_wait return %d\n"</span>, n);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">        <span class="keyword">int</span> fd = activeEvs[i].data.fd;</span><br><span class="line">        <span class="keyword">int</span> events = activeEvs[i].events;</span><br><span class="line">        <span class="keyword">if</span> (events &amp; (EPOLLIN | EPOLLERR)) &#123;</span><br><span class="line">        	<span class="built_in">printf</span>(<span class="string">"loop_once_child   fd = %d , read is ok\n"</span>, fd);</span><br><span class="line">            handleRead(efd, fd);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (events &amp; EPOLLOUT) &#123;</span><br><span class="line">            <span class="keyword">if</span> (output_log)</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">"handling epollout\n"</span>);</span><br><span class="line">            handleWrite(efd, fd);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            exit_if(<span class="number">1</span>, <span class="string">"unknown event"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">handlerNewConnect</span><span class="params">(struct sockaddr_in client_addr)</span></span>&#123;</span><br><span class="line">	<span class="comment">//创建一个新的fd,connect对方。raddr</span></span><br><span class="line">	<span class="keyword">int</span> client_fd = socket(AF_INET, SOCK_DGRAM, <span class="number">0</span>);</span><br><span class="line">	setFdpro(client_fd,SO_REUSEADDR);</span><br><span class="line">	setFdpro(client_fd,SO_REUSEPORT);</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">local_addr</span>;</span></span><br><span class="line">	<span class="built_in">memset</span>(&amp;local_addr, <span class="number">0</span>, <span class="keyword">sizeof</span> local_addr);</span><br><span class="line">	local_addr.sin_family = AF_INET;</span><br><span class="line">	local_addr.sin_port = htons(port);</span><br><span class="line">	local_addr.sin_addr.s_addr = INADDR_ANY;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">int</span> r = ::bind(client_fd, (struct sockaddr *) &amp;local_addr, <span class="keyword">sizeof</span>(struct sockaddr));</span><br><span class="line">	exit_if(r, <span class="string">"bind to 0.0.0.0:%d failed %d %s"</span>, port, errno, strerror(errno));</span><br><span class="line">	r = connect(client_fd , (struct sockaddr * )&amp;client_addr, <span class="keyword">sizeof</span>(struct sockaddr));</span><br><span class="line">	exit_if(r, <span class="string">"connect %s,%d failed: %d,%s"</span>, inet_ntoa(client_addr.sin_addr),port, errno, strerror(errno));</span><br><span class="line"></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">" create fd: %d to %s:%d\n"</span>,client_fd, inet_ntoa(client_addr.sin_addr),port);</span><br><span class="line">	<span class="comment">//连接成功之后，发送消息</span></span><br><span class="line">	<span class="keyword">char</span> send_buf[<span class="number">1024</span>]=<span class="string">"I am server"</span>;</span><br><span class="line">	r = sendto(client_fd,send_buf,<span class="keyword">sizeof</span>(send_buf),<span class="number">0</span>,(struct sockaddr * )&amp;client_addr,<span class="keyword">sizeof</span>(client_addr));</span><br><span class="line">	<span class="comment">//r=send(client_fd,send_buf,sizeof(send_buf),0);</span></span><br><span class="line"></span><br><span class="line">	exit_if(r &lt;<span class="number">0</span>, <span class="string">"sendto %s,%d failed: %d,%s"</span>, inet_ntoa(client_addr.sin_addr),port, errno, strerror(errno));</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">" sendto %s -&gt; %s:%d \n"</span>,send_buf,inet_ntoa(client_addr.sin_addr),port);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="comment">//为该用户单独创建epoll</span></span><br><span class="line">	<span class="keyword">int</span> epollfd = epoll_create(<span class="number">1</span>);</span><br><span class="line">	exit_if(epollfd &lt; <span class="number">0</span>, <span class="string">"epoll_create failed"</span>);</span><br><span class="line"></span><br><span class="line">	<span class="comment">//将新的描述符号设置非阻塞</span></span><br><span class="line">	setNonBlock(client_fd);</span><br><span class="line">	<span class="comment">//将新的客户端fd加入到epoll中监听读事件</span></span><br><span class="line">	updateEvents(epollfd, client_fd, EPOLLIN, EPOLL_CTL_ADD);</span><br><span class="line">	<span class="keyword">for</span> (;;) &#123;  <span class="comment">//子线程的轮寻操作</span></span><br><span class="line">		loop_once_child(epollfd, client_fd, <span class="number">10000</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> *argv[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (argc &gt; <span class="number">1</span>) &#123;</span><br><span class="line">        output_log = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> epollfd = epoll_create(<span class="number">1</span>);</span><br><span class="line">    exit_if(epollfd &lt; <span class="number">0</span>, <span class="string">"epoll_create failed"</span>);</span><br><span class="line">    <span class="comment">//udp</span></span><br><span class="line">    <span class="keyword">int</span> listenfd = socket(AF_INET, SOCK_DGRAM, <span class="number">0</span>);</span><br><span class="line">    exit_if(listenfd &lt; <span class="number">0</span>, <span class="string">"socket failed"</span>);</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">addr</span>;</span></span><br><span class="line">    <span class="built_in">memset</span>(&amp;addr, <span class="number">0</span>, <span class="keyword">sizeof</span> addr);</span><br><span class="line">    addr.sin_family = AF_INET;</span><br><span class="line">    addr.sin_port = htons(port);</span><br><span class="line">    addr.sin_addr.s_addr = INADDR_ANY;</span><br><span class="line">    <span class="keyword">int</span> r = ::bind(listenfd, (struct sockaddr *)&amp;addr, <span class="keyword">sizeof</span>(struct sockaddr));</span><br><span class="line">    exit_if(r, <span class="string">"bind to 0.0.0.0:%d failed %d %s"</span>, port, errno, strerror(errno));</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">" bind port = %d \n"</span>, port);</span><br><span class="line"></span><br><span class="line">    setFdpro(listenfd,SO_REUSEADDR);</span><br><span class="line">    setFdpro(listenfd,SO_REUSEPORT);</span><br><span class="line">    setNonBlock(listenfd);</span><br><span class="line">    updateEvents(epollfd, listenfd, EPOLLIN , EPOLL_CTL_ADD);</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        loop_once_main(epollfd, listenfd, <span class="number">10000</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//退出回收线程资源</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">auto</span> it = vthreads.begin(); it != vthreads.end(); ++it)&#123;</span><br><span class="line">    	it-&gt;join();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>客户端demo</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 编译：  g++ udp_client.cc  -o udp_client</span></span><br><span class="line"><span class="comment"> * 运行： ./udp_client port  字符串</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;arpa/inet.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;errno.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;netinet/in.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;signal.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/epoll.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;map&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> exit_if(r, ...)                                                                    		\</span></span><br><span class="line">    <span class="keyword">if</span> (r) &#123;                                                                                     \</span><br><span class="line">        <span class="built_in">printf</span>(__VA_ARGS__);                                                                     \</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"%s:%d error no: %d error msg %s\n"</span>, __FILE__, __LINE__, errno, strerror(errno)); \</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">1</span>);                                                                                 \</span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">string</span> serverIp = <span class="string">"127.0.0.1"</span>;</span><br><span class="line"><span class="keyword">int</span> serverPort = <span class="number">8080</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> *argv[])</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span>(argc &lt; <span class="number">3</span>)&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"usage:  ./udp_client client_port  sendSomething"</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">unsigned</span> short local_port = atoi(argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="comment">//udp</span></span><br><span class="line">    <span class="keyword">int</span> fd = socket(AF_INET, SOCK_DGRAM, <span class="number">0</span>);</span><br><span class="line">    exit_if(fd &lt; <span class="number">0</span>, <span class="string">"socket failed"</span>);</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">local_addr</span>;</span></span><br><span class="line">    <span class="built_in">memset</span>(&amp;local_addr, <span class="number">0</span>, <span class="keyword">sizeof</span> local_addr);</span><br><span class="line">    local_addr.sin_family = AF_INET;</span><br><span class="line">    local_addr.sin_port = htons(local_port);</span><br><span class="line">    local_addr.sin_addr.s_addr = INADDR_ANY;</span><br><span class="line">    <span class="keyword">int</span> r = ::bind(fd, (struct sockaddr *) &amp;local_addr, <span class="keyword">sizeof</span>(struct sockaddr));</span><br><span class="line">    exit_if(r, <span class="string">"bind to 0.0.0.0:%d failed %d %s"</span>, local_port, errno, strerror(errno));</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">other_addr</span>;</span></span><br><span class="line">	<span class="built_in">memset</span>(&amp;other_addr, <span class="number">0</span>, <span class="keyword">sizeof</span> other_addr);</span><br><span class="line">	other_addr.sin_family = AF_INET;</span><br><span class="line">	other_addr.sin_port = htons(serverPort);</span><br><span class="line">	other_addr.sin_addr.s_addr = inet_addr(serverIp.c_str());</span><br><span class="line"></span><br><span class="line">	<span class="keyword">int</span> i = <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">    	<span class="keyword">int</span> r = sendto(fd,argv[<span class="number">2</span>],<span class="keyword">sizeof</span>(argv[<span class="number">2</span>]),<span class="number">0</span>,(struct sockaddr * )&amp;other_addr,<span class="keyword">sizeof</span>(other_addr));</span><br><span class="line">    	exit_if(r&lt;<span class="number">0</span>, <span class="string">"sendto error"</span>);</span><br><span class="line"></span><br><span class="line">    	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">other</span>;</span></span><br><span class="line">    	<span class="keyword">socklen_t</span> rsz = <span class="keyword">sizeof</span>(other);</span><br><span class="line">    	<span class="keyword">char</span> recv_buf[<span class="number">1024</span>];</span><br><span class="line">    	<span class="keyword">int</span> recv_sive = recvfrom(fd,recv_buf,<span class="keyword">sizeof</span>(recv_buf),<span class="number">0</span>,(struct sockaddr * )&amp;other,&amp;rsz);</span><br><span class="line">    	exit_if(recv_sive&lt;<span class="number">0</span>, <span class="string">"recvfrom error"</span>);</span><br><span class="line">    	<span class="built_in">printf</span>(<span class="string">"read %d bytes  context is : %s\n"</span>, recv_sive, recv_buf);</span><br><span class="line">    	sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    close(fd);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果分析：</p>
+<ul>
+<li>主线程监听fd是4，所对应epoll 描述符 3， 一开始用户A,B消息都准备投递到fd4</li>
+<li>主线程收到创建线程与用户A的描述符是5，对应epoll是6， 可见用户A后续消息都准确投递到fd5</li>
+<li>线程与用户B描述符7，，对应epoll是6, 可见用户B后续消息都准确投递到fd7</li>
+</ul>
+<p><img src="/2020/01/05/基于多线程的udp协议accept模型/图4-1运行结果.png" alt="图4-1"></p>
+<p>查看描述符对应的关系如下：</p>
+<ul>
+<li>描述符fd 4 监听所有。</li>
+<li>描述符fd 5已经绑定了localhost:12345(用户A)</li>
+<li>描述符fd 7已经绑定了localhost:12346(用户B)</li>
+</ul>
+<p><img src="/2020/01/05/基于多线程的udp协议accept模型/图4-2连接对应关系.png" alt="图4-2"></p>
+<p><strong>可知，通过验证，确定此方案可行</strong>。</p>
+<h1 id="5、小结"><a href="#5、小结" class="headerlink" title="5、小结"></a>5、小结</h1><p>我们小组讨论了好几次，都卡在这个技术点上，没有比较好的方案。后续我在查找资料过程中，找到了上述的解决方案，得益于腾讯手Q游戏中心后台开发人员黄日成，在此表示感谢。</p>
+<h1 id="6、参考"><a href="#6、参考" class="headerlink" title="6、参考"></a>6、参考</h1><ul>
+<li><p><a href="https://cloud.tencent.com/developer/article/1004555" target="_blank" rel="noopener">告知你不为人知的 UDP：连接性和负载均衡</a></p>
+</li>
+<li><p><a href="http://man7.org/linux/man-pages/man7/epoll.7.html" target="_blank" rel="noopener">epoll(7) - Linux manual page</a></p>
+</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/udp/" rel="tag"># udp</a>
+          
+            <a href="/tags/epoll/" rel="tag"># epoll</a>
+          
+            <a href="/tags/多线程/" rel="tag"># 多线程</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/12/27/Linux安装和使用googletest单元测试框架/" rel="next" title="Linux安装和使用googletest单元测试框架">
+                <i class="fa fa-chevron-left"></i> Linux安装和使用googletest单元测试框架
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/03/16/浅谈数字证书以及数字签名的原理/" rel="prev" title="浅谈数字证书以及数字签名的原理">
+                浅谈数字证书以及数字签名的原理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1、场景需求"><span class="nav-text">1、场景需求</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、预先方案"><span class="nav-text">2、预先方案</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、最终方案"><span class="nav-text">3、最终方案</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4、方案验证"><span class="nav-text">4、方案验证</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5、小结"><span class="nav-text">5、小结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6、参考"><span class="nav-text">6、参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

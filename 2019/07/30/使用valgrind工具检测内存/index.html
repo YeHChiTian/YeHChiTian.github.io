@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="valgrind,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言 由于最近项目需要检测C/C++代码方面的内存。因此就研究了几个检测工具，最终确定了使用valgrind。本文主要介绍Valgrind的使用，在linux上以及在android native上检测内存。  一、valgrind的概念原理以及使用主要参考IBM上关于Valgrind使用介绍:应用 Valgrind 发现 Linux 程序的内存问题。在此不再叙述。 二、在linux上使用valgr">
+<meta name="keywords" content="valgrind">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用valgrind工具检测内存">
+<meta property="og:url" content="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言 由于最近项目需要检测C/C++代码方面的内存。因此就研究了几个检测工具，最终确定了使用valgrind。本文主要介绍Valgrind的使用，在linux上以及在android native上检测内存。  一、valgrind的概念原理以及使用主要参考IBM上关于Valgrind使用介绍:应用 Valgrind 发现 Linux 程序的内存问题。在此不再叙述。 二、在linux上使用valgr">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/图2-1数组越界.png">
+<meta property="og:image" content="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/图2-2未初始化内存.png">
+<meta property="og:image" content="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/图2-3内存读写越界.png">
+<meta property="og:image" content="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/图2-4内存覆盖.png">
+<meta property="og:image" content="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/图2-5动态内存管理错误.png">
+<meta property="og:image" content="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/图2-6内存泄漏.png">
+<meta property="og:image" content="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/图3-1交叉编译器.png">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.461Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用valgrind工具检测内存">
+<meta name="twitter:description" content="前言 由于最近项目需要检测C/C++代码方面的内存。因此就研究了几个检测工具，最终确定了使用valgrind。本文主要介绍Valgrind的使用，在linux上以及在android native上检测内存。  一、valgrind的概念原理以及使用主要参考IBM上关于Valgrind使用介绍:应用 Valgrind 发现 Linux 程序的内存问题。在此不再叙述。 二、在linux上使用valgr">
+<meta name="twitter:image" content="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/图2-1数组越界.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/">
+
+
+
+
+
+  <title>使用valgrind工具检测内存 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/07/30/使用valgrind工具检测内存/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">使用valgrind工具检测内存</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-07-30T21:39:51+08:00">
+                2019-07-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/内存检测/" itemprop="url" rel="index">
+                    <span itemprop="name">内存检测</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><blockquote>
+<p>由于最近项目需要检测C/C++代码方面的内存。因此就研究了几个检测工具，最终确定了使用valgrind。本文主要介绍Valgrind的使用，在linux上以及在android native上检测内存。</p>
+</blockquote>
+<h1 id="一、valgrind的概念原理以及使用"><a href="#一、valgrind的概念原理以及使用" class="headerlink" title="一、valgrind的概念原理以及使用"></a>一、valgrind的概念原理以及使用</h1><p>主要参考IBM上关于Valgrind使用介绍:<a href="https://www.ibm.com/developerworks/cn/linux/l-cn-valgrind/" target="_blank" rel="noopener">应用 Valgrind 发现 Linux 程序的内存问题</a>。在此不再叙述。</p>
+<h1 id="二、在linux上使用valgrind检测例子"><a href="#二、在linux上使用valgrind检测例子" class="headerlink" title="二、在linux上使用valgrind检测例子"></a>二、在linux上使用valgrind检测例子</h1><p>虽然这部分内容基本来自上面的文章，这里再做记录也是为了记录学习过程。</p>
+<h2 id="1-在linux上编译最新valgrind"><a href="#1-在linux上编译最新valgrind" class="headerlink" title="(1)在linux上编译最新valgrind"></a>(1)在linux上编译最新valgrind</h2><p>1.在官方下载最新版本的valgrind:<a href="http://www.valgrind.org/downloads/current.html" target="_blank" rel="noopener">官方最新valgrind版本</a></p>
+<p>2.根据下载文件中<strong>README</strong>指示编译，很简单。</p>
+<p>3.编译完成测试</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">valgrind --version</span><br><span class="line">valgrind-3.15.0  （输出版本）</span><br></pre></td></tr></table></figure>
+<h2 id="2-在linux上使用valgrind测试例子"><a href="#2-在linux上使用valgrind测试例子" class="headerlink" title="(2) 在linux上使用valgrind测试例子"></a>(2) 在linux上使用valgrind测试例子</h2><h3 id="1-数组越界"><a href="#1-数组越界" class="headerlink" title="1. 数组越界"></a>1. 数组越界</h3><p>程序: test1.c</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">char</span>* c = (<span class="keyword">char</span>*)<span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="keyword">char</span>)*<span class="number">20</span>);</span><br><span class="line">	<span class="keyword">char</span>* d = (<span class="keyword">char</span>*)<span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="keyword">char</span>)*<span class="number">10</span>);</span><br><span class="line">	c[<span class="number">20</span>]=<span class="string">'a'</span>;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>note: 编译检测注意事项（后续测试例子依然使用这种方法）</p>
+<p>​    编译检测： 编译务必加上<strong>-g</strong>选项。（-g表示增加调试信息，检测内存才有更多信息输出）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc test1.c -g -o <span class="built_in">test</span></span><br></pre></td></tr></table></figure>
+<p>​    检测使用<strong>memcheck</strong>工具，<strong>–leak-check=full</strong>(检测内存泄漏)，<strong>–show-leak-kinds=all</strong>(将所有内存泄漏消息都显示)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">valgrind --tool=memcheck --leak-check=full  --show-leak-kinds=all  ./test</span><br></pre></td></tr></table></figure>
+<p>数组越界检测结果如图2-1所示：<strong>程序行8越界写入, 以及在行6，7分配了30字节内存，都没有分配</strong></p>
+<p><img src="/2019/07/30/使用valgrind工具检测内存/图2-1数组越界.png" alt="图2-1"></p>
+<center>图2-1 数组越界检测结果</center><br>### 2.使用未初始化内存<br><br>程序：test2.c<br><br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">int</span> a[<span class="number">5</span>];</span><br><span class="line">	<span class="keyword">int</span> i,s;</span><br><span class="line">	a[<span class="number">0</span>]=a[<span class="number">1</span>]=a[<span class="number">3</span>]=a[<span class="number">4</span>]=<span class="number">0</span>;</span><br><span class="line">	s = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">for</span>(i=<span class="number">0</span>;i&lt;<span class="number">5</span>;++i)&#123;</span><br><span class="line">		s+=a[i];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(s == <span class="number">377</span>)&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"sum is = %d\n"</span>,s);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br><br>检测结果如图2-2所示：<strong>程序行12指出未初始化变量s, 其主要在使用s变量的时候，检测到s的赋值，a[2]存在未初始化，导致s的值也不确定。</strong><br><br><img src="/2019/07/30/使用valgrind工具检测内存/图2-2未初始化内存.png" alt="图2-2"><br><br><center>图2-2 使用未初始化内存检测结果</center><br>### 3. 内存读写越界<br><br>程序：test3.c<br><br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">int</span> len=<span class="number">4</span>;</span><br><span class="line">	<span class="keyword">int</span>* pt = (<span class="keyword">int</span>*)<span class="built_in">malloc</span>(len*<span class="keyword">sizeof</span>(<span class="keyword">int</span>));</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">int</span> *p = pt;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i =<span class="number">0</span>; i &lt; len;++i)&#123;</span><br><span class="line">		++p;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//over</span></span><br><span class="line">	*p = <span class="number">5</span>;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"the value of p equal: %d"</span>, *p);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br><br>检测结果如图2-3所示：<strong>程序行15检测到越界写内存，程序行16检测到越界读内存，并且这个内存都在行7分配，最终也没有释放。一共泄漏了16个字节。</strong><br><br><img src="/2019/07/30/使用valgrind工具检测内存/图2-3内存读写越界.png" alt="图2-3"><br><br><center>图2-3 内存读写越界检测结果</center><br>### 4. 内存覆盖<br><br>程序：test4.c<br><br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">char</span> x[<span class="number">50</span>];</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;<span class="number">50</span> ; ++i)&#123;</span><br><span class="line">		x[i]=i+<span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">strncpy</span>(x+<span class="number">20</span>,x,<span class="number">20</span>);  <span class="comment">//ok</span></span><br><span class="line">	<span class="built_in">strncpy</span>(x+<span class="number">20</span>,x,<span class="number">21</span>);  <span class="comment">//overlap</span></span><br><span class="line">	</span><br><span class="line">	<span class="built_in">strncpy</span>(x,x+<span class="number">20</span>,<span class="number">20</span>);  <span class="comment">//ok</span></span><br><span class="line">	<span class="built_in">strncpy</span>(x,x+<span class="number">20</span>,<span class="number">21</span>);  <span class="comment">//overlap</span></span><br><span class="line"></span><br><span class="line">	x[<span class="number">39</span>]=<span class="string">'\0'</span>;</span><br><span class="line">	<span class="built_in">strcpy</span>(x,x+<span class="number">20</span>);      <span class="comment">//ok</span></span><br><span class="line">	</span><br><span class="line">	x[<span class="number">39</span>]=<span class="number">39</span>;</span><br><span class="line">	x[<span class="number">40</span>]=<span class="string">'\0'</span>;</span><br><span class="line">	<span class="built_in">strcpy</span>(x,x+<span class="number">20</span>);      <span class="comment">//overlap</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br><br>检测结果如下图2-4所示。<strong>程序行12，15，22都指出内存覆盖（overlap）</strong><br><br><img src="/2019/07/30/使用valgrind工具检测内存/图2-4内存覆盖.png" alt="图2-4"><br><br><center>图2-4 内存覆盖检测结果</center><br>### 5.动态内存管理错误<br><br>程序：test5.cpp<br><br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">char</span>* p = (<span class="keyword">char</span>* )<span class="built_in">malloc</span>(<span class="number">10</span>);</span><br><span class="line">	<span class="keyword">char</span>* pt=p;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;<span class="number">10</span>; ++i)&#123;</span><br><span class="line">		p[i] = <span class="string">'z'</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">delete</span> p;</span><br><span class="line"></span><br><span class="line">	pt[<span class="number">1</span>]=<span class="string">'x'</span>;</span><br><span class="line">	<span class="built_in">free</span>(pt);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br><br>检测结果如图2-5所示。<strong>程序中出现不正确使用malloc/free new/delete.   在程序中使用malloc，却使用delete释放内存。程序行12，15报的就是这种错误，程序行14 写入无效内存（虽然使用delete不正确释放内存，但是对改内存写入也回报错）。</strong><br><br><img src="/2019/07/30/使用valgrind工具检测内存/图2-5动态内存管理错误.png" alt="图2-5"><br><br><center>图2-5 动态内存管理错误检测结果</center><br>### 6. 内存泄漏类型<br><br>程序：test6.c<br><br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">node</span>&#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> _<span class="title">node</span> *<span class="title">l</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> _<span class="title">node</span> *<span class="title">r</span>;</span></span><br><span class="line">	<span class="keyword">char</span> v;</span><br><span class="line"></span><br><span class="line">&#125; node;</span><br><span class="line"></span><br><span class="line"><span class="function">node* <span class="title">mk</span><span class="params">(node* l, node* r, <span class="keyword">char</span> val)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	node* f = (node* )<span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(node));</span><br><span class="line">	f-&gt;l = l;</span><br><span class="line">	f-&gt;r = r;</span><br><span class="line">	f-&gt;v =val;</span><br><span class="line">	<span class="keyword">return</span> f;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">nodefr</span><span class="params">(node* n)</span></span>&#123;</span><br><span class="line">	<span class="keyword">if</span>(n)&#123;</span><br><span class="line">		nodefr(n-&gt;l);</span><br><span class="line">		nodefr(n-&gt;r);</span><br><span class="line">		<span class="built_in">free</span>(n);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	node* t1,*t2,*t3;</span><br><span class="line">	t1=mk(mk(mk(<span class="number">0</span>,<span class="number">0</span>,<span class="string">'3'</span>),<span class="number">0</span>,<span class="string">'2'</span>),<span class="number">0</span>,<span class="string">'1'</span>);</span><br><span class="line"></span><br><span class="line">	t2=mk(<span class="number">0</span>,mk(<span class="number">0</span>,mk(<span class="number">0</span>,<span class="number">0</span>,<span class="string">'6'</span>),<span class="string">'5'</span>),<span class="string">'4'</span>);</span><br><span class="line"></span><br><span class="line">	t3=mk(mk(t1,t2,<span class="string">'8'</span>),<span class="number">0</span>,<span class="string">'7'</span>);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br><br>检测结果如图2-6所示。<strong>程序中是生成一棵树的过程，每个节点大小12字节（考虑内存对齐），共8个节点。上述程序所有节点都被泄漏。 Memcheck内存泄漏分为2中，一种可能是内存泄漏（Possibly lost）, 即指仍然存在某个指针能够访问该内存，但该指针已经不是该内存的首地址。 另一种是确定的内存（Definitely lost），即指已经不能够访问这个内存。 Definitely lost又分为两种: 直接的（direct）和间接的（indirect）, 它们区别是直接是没有任何指针指向该内存， 间接是指指向该内存的指针都位于内存泄漏处。 在上述中，只有根节点是directly lost, 其他节点都是indirectly lost。</strong><br><br><img src="/2019/07/30/使用valgrind工具检测内存/图2-6内存泄漏.png" alt="图2-6"><br><br><center>图2-6  内存泄漏类型检测结果</center>
+
+
+<h1 id="三、在android上使用valgrind检测"><a href="#三、在android上使用valgrind检测" class="headerlink" title="三、在android上使用valgrind检测"></a>三、在android上使用valgrind检测</h1><h2 id="1-交叉编译valgrind版本"><a href="#1-交叉编译valgrind版本" class="headerlink" title="(1)交叉编译valgrind版本"></a>(1)交叉编译valgrind版本</h2><p><strong>编译一定要参考README.android， 经过多次测试，在真机和许多版本环境中，测试不成功， 这个花费了挺长时间。最终再模拟器arm 4.1 版本上测试成功</strong>。</p>
+<p><strong>安装交叉编译gcc</strong></p>
+<p>以下已经安装了x86, arm版本。如下图3-1所示。（安装过程自行寻找资料）</p>
+<p><img src="/2019/07/30/使用valgrind工具检测内存/图3-1交叉编译器.png" alt="图3-1"></p>
+<p><center>图3-1 android上交叉编译器</center><br><strong>编译valgrind脚本</strong></p>
+<p>根据valgrind中具体平台的<strong>README.android写build.sh</strong>，显示x86版本版本。 arm版本响应修改即可。（脚本ANDROID_HOME变量：/opt/NDK/android-ndk-r14b,如图3-1所示路径）。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">export</span> NDKROOT=<span class="variable">$ANDROID_HOME</span></span><br><span class="line"><span class="built_in">export</span> HWKIND=generic</span><br><span class="line">TOOLCHAIN=<span class="variable">$ANDROID_HOME</span>/toolchain</span><br><span class="line"></span><br><span class="line"><span class="built_in">export</span> AR=<span class="variable">$NDKROOT</span>/toolchains/x86-4.9/prebuilt/linux-x86_64/bin/i686-linux-android-ar</span><br><span class="line"><span class="built_in">export</span> LD=<span class="variable">$NDKROOT</span>/toolchains/x86-4.9/prebuilt/linux-x86_64/bin/i686-linux-android-ld</span><br><span class="line"><span class="built_in">export</span> CC=<span class="variable">$NDKROOT</span>/toolchains/x86-4.9/prebuilt/linux-x86_64/bin/i686-linux-android-gcc</span><br><span class="line"></span><br><span class="line">CPPFLAGS=<span class="string">"--sysroot=<span class="variable">$NDKROOT</span>/platforms/android-9/arch-x86"</span> \</span><br><span class="line">   CFLAGS=<span class="string">"--sysroot=<span class="variable">$NDKROOT</span>/platforms/android-9/arch-x86 -fno-pic"</span> \</span><br><span class="line">   ./configure --prefix=/data/<span class="built_in">local</span>/Inst \</span><br><span class="line">   --host=i686-android-linux --target=i686-android-linux \</span><br><span class="line">   --with-tmpdir=/sdcard</span><br><span class="line"></span><br><span class="line">make -j8</span><br><span class="line">make -j8 install DESTDIR=`<span class="built_in">pwd</span>`/valgrind</span><br></pre></td></tr></table></figure>
+<h2 id="2-如何在valgrind启动一个Android应用程序进行测试"><a href="#2-如何在valgrind启动一个Android应用程序进行测试" class="headerlink" title="(2) 如何在valgrind启动一个Android应用程序进行测试"></a>(2) 如何在valgrind启动一个Android应用程序进行测试</h2><p>具体参考：</p>
+<p>​    (1)<a href="https://stackoverflow.com/questions/13531496/cant-run-a-java-android-program-with-valgrind/19235439#19235439" target="_blank" rel="noopener">Can’t run a Java Android program with Valgrind</a></p>
+<p>​    (2)<a href="https://www.cnblogs.com/kuliuheng/p/10600737.html" target="_blank" rel="noopener">移植Valgrind检测Android JNI内存泄漏</a></p>
+<p>note:</p>
+<p>  1.添加环境变量<strong>VALGRIND_LIB</strong>,指向valgrind存在的目录，例如下面。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">export VALGRIND_LIB=&quot;/data/local/Inst/lib/valgrind&quot;</span><br></pre></td></tr></table></figure>
+<pre><code>2. 将启动脚本valgrind.sh拷贝到android手机，**特别注意 脚本换行符问题， 比如windows和android换行符不一致。**
+3. 参考第一个链接， 如果**bootstrap_valgrind.sh**脚本不能顺利执行，直接一行一行在adb中完成也行。
+</code></pre><h2 id="3-简单测试。"><a href="#3-简单测试。" class="headerlink" title="(3) 简单测试。"></a>(3) 简单测试。</h2><p>直接在adb shell中输入测试ls命令。如果正确，说明valgrind可以在android上使用。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">valgrind --tool=memcheck --leak-check=full  --show-leak-kinds=all  ls</span><br></pre></td></tr></table></figure>
+<h1 id="四、总结"><a href="#四、总结" class="headerlink" title="四、总结"></a>四、总结</h1><p>主要熟悉了valgrind工具使用， 本次使用该工具大部分时间花在将工具搬移到android中测试ndk中的c/c++代码。</p>
+<p>android不是所有平台都支持valgrind， 测试了很多版本，最终发现模拟器arm 4.1支持，踩了很多坑。</p>
+<h1 id="五、参考"><a href="#五、参考" class="headerlink" title="五、参考"></a>五、参考</h1><p>1.<a href="https://aheadsnail.github.io/2019/07/20/Valgrind-Native-%E5%86%85%E5%AD%98%E6%A3%80%E6%B5%8B/" target="_blank" rel="noopener">Valgrind Native 内存检测</a></p>
+<p>2.<a href="https://stackoverflow.com/questions/13531496/cant-run-a-java-android-program-with-valgrind/19235439#19235439" target="_blank" rel="noopener">Can’t run a Java Android program with Valgrind</a></p>
+<p>3.<a href="https://www.cnblogs.com/kuliuheng/p/10600737.html" target="_blank" rel="noopener">移植Valgrind检测Android JNI内存泄漏</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/valgrind/" rel="tag"># valgrind</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/25/aria2的事件机制以及源码分析/" rel="next" title="aria2的事件机制以及源码分析">
+                <i class="fa fa-chevron-left"></i> aria2的事件机制以及源码分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/08/21/libcurl使用指定IP访问http资源/" rel="prev" title="libcurl使用指定IP访问http资源">
+                libcurl使用指定IP访问http资源 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#一、valgrind的概念原理以及使用"><span class="nav-text">一、valgrind的概念原理以及使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、在linux上使用valgrind检测例子"><span class="nav-text">二、在linux上使用valgrind检测例子</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-在linux上编译最新valgrind"><span class="nav-text">(1)在linux上编译最新valgrind</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-在linux上使用valgrind测试例子"><span class="nav-text">(2) 在linux上使用valgrind测试例子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-数组越界"><span class="nav-text">1. 数组越界</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、在android上使用valgrind检测"><span class="nav-text">三、在android上使用valgrind检测</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-交叉编译valgrind版本"><span class="nav-text">(1)交叉编译valgrind版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-如何在valgrind启动一个Android应用程序进行测试"><span class="nav-text">(2) 如何在valgrind启动一个Android应用程序进行测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-简单测试。"><span class="nav-text">(3) 简单测试。</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、总结"><span class="nav-text">四、总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#五、参考"><span class="nav-text">五、参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

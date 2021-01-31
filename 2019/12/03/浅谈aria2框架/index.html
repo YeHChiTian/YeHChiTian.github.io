@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="框架,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言 aria2大部分代码都看过（主要是http/https，bittorrent模块），也在这个框架上修改了部分逻辑，包括tracker逻辑，引入了utp协议等等，总的来说，对aria2框架还是比较熟悉。因此本文，主要是以个人的理解，谈谈aria2c框架。  一、aria2简单介绍 aria2是一个轻量级、支持多协议、命令行下载工具, 支持多种下载协议（有http/https,ftp,sftp,">
+<meta name="keywords" content="框架">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈aria2框架">
+<meta property="og:url" content="http://yoursite.com/2019/12/03/浅谈aria2框架/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言 aria2大部分代码都看过（主要是http/https，bittorrent模块），也在这个框架上修改了部分逻辑，包括tracker逻辑，引入了utp协议等等，总的来说，对aria2框架还是比较熟悉。因此本文，主要是以个人的理解，谈谈aria2c框架。  一、aria2简单介绍 aria2是一个轻量级、支持多协议、命令行下载工具, 支持多种下载协议（有http/https,ftp,sftp,">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2019/12/03/浅谈aria2框架/aria2.png">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.503Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈aria2框架">
+<meta name="twitter:description" content="前言 aria2大部分代码都看过（主要是http/https，bittorrent模块），也在这个框架上修改了部分逻辑，包括tracker逻辑，引入了utp协议等等，总的来说，对aria2框架还是比较熟悉。因此本文，主要是以个人的理解，谈谈aria2c框架。  一、aria2简单介绍 aria2是一个轻量级、支持多协议、命令行下载工具, 支持多种下载协议（有http/https,ftp,sftp,">
+<meta name="twitter:image" content="http://yoursite.com/2019/12/03/浅谈aria2框架/aria2.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/12/03/浅谈aria2框架/">
+
+
+
+
+
+  <title>浅谈aria2框架 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/03/浅谈aria2框架/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">浅谈aria2框架</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-12-03T15:17:01+08:00">
+                2019-12-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Aria2/" itemprop="url" rel="index">
+                    <span itemprop="name">Aria2</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><blockquote>
+<p>aria2大部分代码都看过（主要是http/https，bittorrent模块），也在这个框架上修改了部分逻辑，包括tracker逻辑，引入了utp协议等等，总的来说，对aria2框架还是比较熟悉。因此本文，主要是以个人的理解，谈谈aria2c框架。</p>
+</blockquote>
+<h1 id="一、aria2简单介绍"><a href="#一、aria2简单介绍" class="headerlink" title="一、aria2简单介绍"></a>一、aria2简单介绍</h1><ul>
+<li>aria2是一个轻量级、支持多协议、命令行下载工具, 支持多种下载协议（有http/https,ftp,sftp, Bittorrent ,Metalink）下载工具。 aria2c可以通过rpc进行交互（支持json,xml格式），以下来自官方文档解释</li>
+</ul>
+<blockquote>
+<p>aria2 is a <strong>lightweight</strong> multi-protocol &amp; multi-source command-line <strong>download utility</strong>. It supports <strong>HTTP/HTTPS</strong>, <strong>FTP</strong>, <strong>SFTP</strong>, <strong>BitTorrent</strong> and <strong>Metalink</strong>. aria2 can be manipulated via built-in <strong>JSON-RPC</strong> and <strong>XML-RPC</strong> interfaces.</p>
+</blockquote>
+<p><strong>官方文档参考</strong><a href="https://aria2.github.io/" target="_blank" rel="noopener">https://aria2.github.io/</a></p>
+<ul>
+<li>aria2c使用简单, 可从官方文档下<strong>Usage Examples</strong>中，了解aria2c的使用。</li>
+<li>支持可视化的前端web UI :<a href="https://github.com/ziahamza/webui-aria2" target="_blank" rel="noopener"><strong>webui-aria2</strong></a>。</li>
+<li>aria2文档很全面，配置选项也非常丰富，可参考：<a href="https://aria2.github.io/manual/en/html/index.html" target="_blank" rel="noopener">https://aria2.github.io/manual/en/html/index.html</a></li>
+<li>小中型项目，代码也是挺多（统计release 1.35.0版本，代码包括.cc和.h一共有952多个， 代码总行数14万，包括注释）</li>
+<li>aria2c历史，第一个release版本（0.1.0）在2006年发布。至今已经经历了几十个版本。</li>
+<li>github上的开源项目地址：目前stars数量有20K.</li>
+<li>aria2c主要开发是由一个日本程序员完成。</li>
+<li>aria2的定位是一个轻量级的下载工具，导致aria2只是一个单线程的程序。</li>
+</ul>
+<h1 id="二、aria2框架"><a href="#二、aria2框架" class="headerlink" title="二、aria2框架"></a>二、aria2框架</h1><p>aria2的框架非常类似于单核CPU在系统中处理任务。我们知道操作系统维护了一个任务队列，CPU轮询从这个任务队列中取出任务执行，当任务结束或者任务时间片到达的时候，CPU会保存当前任务，然后去执行下一个任务，一直不断轮询执行。任务可以有优先级，任务也可以产生新的任务，然后将新产生任务添加到任务队列等待下次运行。</p>
+<p>对于aria2来说，aria2是不断从command集合(类似CPU中的任务)队列中取出command,然后再执行command。command也有优先级，一个command也可以产生新的command。</p>
+<p>aria2框架大致如下图所示：</p>
+<p>​                                                              <img src="/2019/12/03/浅谈aria2框架/aria2.png" alt="图2-1"></p>
+<p>command基本分为两类，一类是常规command(routineCommands), 每次都会执行。另一类是任务command(commands)，只有当条件满足或者超时才会执行。</p>
+<p>常规command(routineCommands_)，比如：</p>
+<ul>
+<li>AutoSaveCommand， 表示定时自动保存过程文件，有利于断点续传</li>
+<li>SaveSessionCommand，定时记录当前下载任务情况。</li>
+</ul>
+<p>任务command(commands_)， 比如：</p>
+<ul>
+<li><p>http下载，分为几个阶段，每个阶段代表一个command，CreateRequestCommand，HttpInitiateConnectionCommand，HttpRequestCommand，HttpResponseCommand，HttpDownloadCommand等。</p>
+</li>
+<li><p>bt下载，也分为几个阶段：PeerInitiateConnectionCommand，InitiatorMSEHandshakeCommand，PeerInteractionCommand</p>
+</li>
+</ul>
+<h1 id="三、框架优缺点（trade-off）"><a href="#三、框架优缺点（trade-off）" class="headerlink" title="三、框架优缺点（trade-off）"></a>三、框架优缺点（trade-off）</h1><p><strong>优点：</strong></p>
+<ul>
+<li><p>支持rpc远程增添任务，修改配置选项等等。</p>
+</li>
+<li><p>轻量级，充分利用单核cpu性能。</p>
+</li>
+<li><p>日志级别清晰</p>
+</li>
+<li><p>基本所有实现都自己写，很多STL模板，包括http协议完全自己实现。</p>
+</li>
+<li><p>使用了C++11特性 （这个对于学习C++11的人，学习源码不个不错选择）</p>
+</li>
+</ul>
+<p><strong>缺点：</strong></p>
+<ul>
+<li>单线程</li>
+<li>所有描述符都是同步操作（ 性能低）</li>
+<li>代码耦合度太高</li>
+</ul>
+<h1 id="四、参考"><a href="#四、参考" class="headerlink" title="四、参考"></a>四、参考</h1><p><a href="https://aria2.github.io/" target="_blank" rel="noopener">官方文档</a></p>
+<p>​    </p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/框架/" rel="tag"># 框架</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/11/11/Linux关于select中FD_相关宏实现/" rel="next" title="Linux关于select中FD_相关宏实现">
+                <i class="fa fa-chevron-left"></i> Linux关于select中FD_相关宏实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/12/27/Linux安装和使用googletest单元测试框架/" rel="prev" title="Linux安装和使用googletest单元测试框架">
+                Linux安装和使用googletest单元测试框架 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#一、aria2简单介绍"><span class="nav-text">一、aria2简单介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、aria2框架"><span class="nav-text">二、aria2框架</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、框架优缺点（trade-off）"><span class="nav-text">三、框架优缺点（trade-off）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、参考"><span class="nav-text">四、参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

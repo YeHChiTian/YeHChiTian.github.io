@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="googletest,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言 ​    由于项目越来越大，为了提高程序的稳定性，决定引入单元测试。最后确定使用谷歌googletest开源单元测试框架。本文主要介绍googletest框架属性以及在linux平台编译、简单使用。  单元测试框架的了解（来自知乎）：  单元测试到底是什么？应该怎么做？  各位都是怎么进行单元测试的？   一、googletest框架简介​    C++单元测试框架有cppunit, boo">
+<meta name="keywords" content="googletest">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux安装和使用googletest单元测试框架">
+<meta property="og:url" content="http://yoursite.com/2019/12/27/Linux安装和使用googletest单元测试框架/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言 ​    由于项目越来越大，为了提高程序的稳定性，决定引入单元测试。最后确定使用谷歌googletest开源单元测试框架。本文主要介绍googletest框架属性以及在linux平台编译、简单使用。  单元测试框架的了解（来自知乎）：  单元测试到底是什么？应该怎么做？  各位都是怎么进行单元测试的？   一、googletest框架简介​    C++单元测试框架有cppunit, boo">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2019/12/27/Linux安装和使用googletest单元测试框架/test.png">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.457Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux安装和使用googletest单元测试框架">
+<meta name="twitter:description" content="前言 ​    由于项目越来越大，为了提高程序的稳定性，决定引入单元测试。最后确定使用谷歌googletest开源单元测试框架。本文主要介绍googletest框架属性以及在linux平台编译、简单使用。  单元测试框架的了解（来自知乎）：  单元测试到底是什么？应该怎么做？  各位都是怎么进行单元测试的？   一、googletest框架简介​    C++单元测试框架有cppunit, boo">
+<meta name="twitter:image" content="http://yoursite.com/2019/12/27/Linux安装和使用googletest单元测试框架/test.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/12/27/Linux安装和使用googletest单元测试框架/">
+
+
+
+
+
+  <title>Linux安装和使用googletest单元测试框架 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/27/Linux安装和使用googletest单元测试框架/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Linux安装和使用googletest单元测试框架</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-12-27T22:08:25+08:00">
+                2019-12-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/单元测试框架/" itemprop="url" rel="index">
+                    <span itemprop="name">单元测试框架</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><blockquote>
+<p>​    由于项目越来越大，为了提高程序的稳定性，决定引入单元测试。最后确定使用谷歌<strong>googletest</strong>开源单元测试框架。本文主要介绍googletest框架属性以及在linux平台编译、简单使用。</p>
+</blockquote>
+<p>单元测试框架的了解（来自知乎）：</p>
+<ul>
+<li><p><a href="https://www.zhihu.com/question/28729261" target="_blank" rel="noopener">单元测试到底是什么？应该怎么做？</a></p>
+</li>
+<li><p><a href="https://www.zhihu.com/question/27313846" target="_blank" rel="noopener">各位都是怎么进行单元测试的？</a></p>
+</li>
+</ul>
+<h1 id="一、googletest框架简介"><a href="#一、googletest框架简介" class="headerlink" title="一、googletest框架简介"></a>一、googletest框架简介</h1><p>​    C++单元测试框架有cppunit, boost.Test googletest等等，而googletest（简称gtest）是比较丰富并且跨平台。</p>
+<p>​    详细了解这个框架参考官方：<a href="https://github.com/google/googletest" target="_blank" rel="noopener">https://github.com/google/googletest</a></p>
+<p><strong>平台支持</strong></p>
+<ul>
+<li>Linux</li>
+<li>Mac OS X</li>
+<li>Windows</li>
+<li>Cygwin</li>
+<li>MinGW</li>
+<li>Windows Mobile</li>
+<li>Symbian</li>
+<li>PlatformIO</li>
+</ul>
+<p><strong>框架属性</strong></p>
+<ul>
+<li>An <a href="https://en.wikipedia.org/wiki/XUnit" target="_blank" rel="noopener">xUnit</a> test framework.</li>
+<li>Test discovery.</li>
+<li>A rich set of assertions.</li>
+<li>User-defined assertions.</li>
+<li>Death tests.</li>
+<li>Fatal and non-fatal failures.</li>
+<li>Value-parameterized tests.</li>
+<li>Type-parameterized tests.</li>
+<li>Various options for running the tests.</li>
+<li>XML test report generation.</li>
+</ul>
+<h1 id="二、在linux上编译googletest"><a href="#二、在linux上编译googletest" class="headerlink" title="二、在linux上编译googletest"></a>二、在linux上编译googletest</h1><p>googletest项目地址：<a href="https://github.com/google/googletest" target="_blank" rel="noopener">https://github.com/google/googletest</a></p>
+<ul>
+<li><strong>下载gtest</strong></li>
+</ul>
+<p>我下载了<strong>googletest-release-1.8.0</strong>版本，解压之后发现包含两个模块：gtest和gmock (googlemock，这个模块使用场景，在一些需要模拟数据的情景下)</p>
+<ul>
+<li><strong>编译gtest</strong></li>
+</ul>
+<p>参考/googletest/README.md文件，提供了三种编译方式: 命令行直接编译、make和cmake。我选择了直接编译。如下所示${GTEST_DIR}变量替换为当前路径googletest目录（尽量使用决定路径）。</p>
+<p>直接编译googletest/src/gtest-all.cc文件再打包为静态库。（-pthread 可知gtest是多线程实现）</p>
+<p><strong>注意，如果库要移植，需要添加编译选项-fPIC</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">g++ -isystem $&#123;GTEST_DIR&#125;/include -I$&#123;GTEST_DIR&#125; \</span><br><span class="line">       -pthread -c $&#123;GTEST_DIR&#125;/src/gtest-all.cc</span><br><span class="line">ar -rv libgtest.a gtest-all.o</span><br></pre></td></tr></table></figure>
+<p>使用make方式编译</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd $&#123;GTEST_DIR&#125;/make</span><br><span class="line">make</span><br><span class="line">./sample1_unittest</span><br></pre></td></tr></table></figure>
+<p>使用cmake方式编译, 编译添加gtest_build_samples=ON宏，可以将测试samples编译进来。</p>
+<p>最后一句替换为：cmake -Dgtest_build_samples=ON ${GTEST_DIR}</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mkdir mybuild       </span><br><span class="line">cd mybuild</span><br><span class="line">cmake $&#123;GTEST_DIR&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="三、googletest简单使用"><a href="#三、googletest简单使用" class="headerlink" title="三、googletest简单使用"></a>三、googletest简单使用</h1><p>gtest自带10个测试用例，非常值得学习：<a href="https://github.com/google/googletest/tree/master/googletest/samples" target="_blank" rel="noopener">https://github.com/google/googletest/tree/master/googletest/samples</a></p>
+<p>每个测试用例展示主要测试点同：</p>
+<ul>
+<li>Sample #1 shows the basic steps of using googletest to test C++ functions.</li>
+<li>Sample #2 shows a more complex unit test for a class with multiple member functions.</li>
+<li>Sample #3 uses a test fixture.</li>
+<li>Sample #4 teaches you how to use googletest and <code>googletest.h</code> together to get the best of both libraries.</li>
+<li>Sample #5 puts shared testing logic in a base test fixture, and reuses it in derived fixtures.</li>
+<li>Sample #6 demonstrates type-parameterized tests.</li>
+<li>Sample #7 teaches the basics of value-parameterized tests.</li>
+<li>Sample #8 shows using <code>Combine()</code> in value-parameterized tests.</li>
+<li>Sample #9 shows use of the listener API to modify Google Test’s console output and the use of its reflection API to inspect test results.</li>
+<li>Sample #10 shows use of the listener API to implement a primitive memory leak checker.</li>
+</ul>
+<p>简单测试程序</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">// hello_test.cpp</span><br><span class="line"></span><br><span class="line">#include &lt;gtest/gtest.h&gt;</span><br><span class="line"></span><br><span class="line">int Factorial(int n) &#123;</span><br><span class="line">  int result = 1;</span><br><span class="line">  for (int i = 1; i &lt;= n; i++) &#123;</span><br><span class="line">    result *= i;</span><br><span class="line">  &#125;</span><br><span class="line">  return result;</span><br><span class="line">&#125;</span><br><span class="line">//简单测试函数</span><br><span class="line">TEST(FunTest, FactorialTest) &#123;</span><br><span class="line">	EXPECT_EQ(Factorial(1), 1);</span><br><span class="line">	EXPECT_EQ(Factorial(2), 2);</span><br><span class="line">	EXPECT_EQ(Factorial(3), 5);</span><br><span class="line">	EXPECT_EQ(Factorial(8), 40320);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(int argc, char **argv) &#123;</span><br><span class="line">  ::testing::InitGoogleTest(&amp;argc, argv);</span><br><span class="line">  return RUN_ALL_TESTS();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果如下：（效果不错）</p>
+<p><img src="/2019/12/27/Linux安装和使用googletest单元测试框架/test.png" alt="图1-1"></p>
+<h1 id="四、googletest学习"><a href="#四、googletest学习" class="headerlink" title="四、googletest学习"></a>四、googletest学习</h1><p>推荐从源头学习，效率高。</p>
+<p>主要参考官网：<a href="https://github.com/google/googletest" target="_blank" rel="noopener">https://github.com/google/googletest</a></p>
+<p>编译参考：<a href="https://github.com/google/googletest/blob/master/googletest/README.md" target="_blank" rel="noopener">https://github.com/google/googletest/blob/master/googletest/README.md</a></p>
+<p>学习gtest的基本用法：<a href="https://github.com/google/googletest/blob/master/googletest/docs/primer.md" target="_blank" rel="noopener">https://github.com/google/googletest/blob/master/googletest/docs/primer.md</a></p>
+<p>学习gtest的高级用法：<a href="https://github.com/google/googletest/blob/master/googletest/docs/advanced.md" target="_blank" rel="noopener">https://github.com/google/googletest/blob/master/googletest/docs/advanced.md</a></p>
+<p>gtest的10个样例：<a href="https://github.com/google/googletest/blob/master/googletest/docs/samples.md" target="_blank" rel="noopener">https://github.com/google/googletest/blob/master/googletest/docs/samples.md</a></p>
+<h1 id="五、小结"><a href="#五、小结" class="headerlink" title="五、小结"></a>五、小结</h1><p>​    本次项目组安排我引入单元测试框架，本次了解分为几个步骤，总的大概花了2天时间完成。</p>
+<ul>
+<li>了解C++的单元测试框架。（这个过程也看了handy库自己实现了单元测试的源码，对单元测试理解更深）</li>
+<li>选择googletest测试框架。开源、好用、跨平台。</li>
+<li>在linux编译googletest</li>
+<li>学习googletest的基本用法以及测试用例（这个过程时间长一些，将近一天）</li>
+<li>将googletest引入我们的项目。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/googletest/" rel="tag"># googletest</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/12/03/浅谈aria2框架/" rel="next" title="浅谈aria2框架">
+                <i class="fa fa-chevron-left"></i> 浅谈aria2框架
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/01/05/基于多线程的udp协议accept模型/" rel="prev" title="基于多线程的udp协议accept模型">
+                基于多线程的udp协议accept模型 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#一、googletest框架简介"><span class="nav-text">一、googletest框架简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、在linux上编译googletest"><span class="nav-text">二、在linux上编译googletest</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、googletest简单使用"><span class="nav-text">三、googletest简单使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、googletest学习"><span class="nav-text">四、googletest学习</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#五、小结"><span class="nav-text">五、小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="std::move,std::forward,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言本文主要整理了C++11中std::move和std::forward的原理， 这对理解C++的移动拷贝有很重的意义。 一、左值和右值左值： 一般来说，能在内存中取得其地址， 即是左值。 右值：在内存在无取得其地址的， 即是右值。 note:  左值持久，右值暂短。 左值有持久的状态，一般是变量， 而右值要么是字面常量， 要么是在表达式求值过程中创建的临时对象。 二、左值引用和右值引用右值引用">
+<meta name="keywords" content="std::move,std::forward">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈std::move和std::forward原理">
+<meta property="og:url" content="http://yoursite.com/2020/07/03/浅谈std-move和std-forward原理/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言本文主要整理了C++11中std::move和std::forward的原理， 这对理解C++的移动拷贝有很重的意义。 一、左值和右值左值： 一般来说，能在内存中取得其地址， 即是左值。 右值：在内存在无取得其地址的， 即是右值。 note:  左值持久，右值暂短。 左值有持久的状态，一般是变量， 而右值要么是字面常量， 要么是在表达式求值过程中创建的临时对象。 二、左值引用和右值引用右值引用">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.515Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈std::move和std::forward原理">
+<meta name="twitter:description" content="前言本文主要整理了C++11中std::move和std::forward的原理， 这对理解C++的移动拷贝有很重的意义。 一、左值和右值左值： 一般来说，能在内存中取得其地址， 即是左值。 右值：在内存在无取得其地址的， 即是右值。 note:  左值持久，右值暂短。 左值有持久的状态，一般是变量， 而右值要么是字面常量， 要么是在表达式求值过程中创建的临时对象。 二、左值引用和右值引用右值引用">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/07/03/浅谈std-move和std-forward原理/">
+
+
+
+
+
+  <title>浅谈std::move和std::forward原理 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/03/浅谈std-move和std-forward原理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">浅谈std::move和std::forward原理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2020-07-03T22:18:48+08:00">
+                2020-07-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本文主要整理了C++11中std::move和std::forward的原理， 这对理解C++的移动拷贝有很重的意义。</p>
+<h1 id="一、左值和右值"><a href="#一、左值和右值" class="headerlink" title="一、左值和右值"></a>一、左值和右值</h1><p><strong>左值</strong>： 一般来说，能在内存中取得其地址， 即是左值。</p>
+<p><strong>右值</strong>：在内存在无取得其地址的， 即是右值。</p>
+<p>note:  左值持久，右值暂短。 左值有持久的状态，一般是变量， 而右值要么是字面常量， 要么是在表达式求值过程中创建的临时对象。</p>
+<h1 id="二、左值引用和右值引用"><a href="#二、左值引用和右值引用" class="headerlink" title="二、左值引用和右值引用"></a>二、左值引用和右值引用</h1><p><strong>右值引用</strong>：绑定到右值的引用。  （为了支持移动操作引入）</p>
+<p><strong>左值引用</strong>： 为了区分右值引用， 我们把常规的引用称为左值引用。  </p>
+<p>右值引用引入的意义：</p>
+<blockquote>
+<p>Rvalue references is a small technical extension to the C++ language. Rvalue references allow programmers to avoid logically unnecessary copying and to provide perfect forwarding functions. They are primarily meant to aid in the design of higher performance and more robust libraries.</p>
+</blockquote>
+<p>简单说，引入右值引用就是为了避免不必要的拷贝和支持完美转发。</p>
+<h1 id="三、std-move"><a href="#三、std-move" class="headerlink" title="三、std::move"></a>三、std::move</h1><p>简单了解了左值， 右值， 左值引用， 右值引用。</p>
+<p>接下来描述std::move和std::forward的功能以及原理分析。 </p>
+<p><strong>函数功能</strong></p>
+<p><strong>std::move</strong>:  功能将一个左值/右值， 转换为右值引用。 主要是将左值强制转为右值引用，因为右值引用无法直接绑定到左值上， 为了能让右值引用绑定到左值上， 必须将左值转为右值引用，std::move提供做的就是这个。 对于传入右值， 那么std::move将什么都不做， 直接返回对应的右值引用。</p>
+<p><strong>std::forward</strong>: 功能将参数类型原封不打转发到一下个函数， 包括const属性。  这就是所谓的<strong>“完美转发（perfect forwarding）”</strong></p>
+<p>在深入分析std::move和std::forward之前， 先了解一个概念<strong>“引用折叠”/ “引用坍塌”(reference-collapsing rules)</strong>, 如果我们间接创建了一个引用的引用， 这些引用将会形成”折叠”, 规则如下。</p>
+<ul>
+<li>X&amp; &amp;  ,  X&amp; &amp;&amp; 和X&amp;&amp; &amp;都会折叠成类型X&amp;</li>
+<li>类型X&amp;&amp; &amp;&amp;折叠成X&amp;&amp;</li>
+</ul>
+<p>由此可见， 只有一种情况折叠成右值引用， 即右值引用的右值引用。 其他都折叠为左值引用。</p>
+<p><strong>std::move实现原理分析</strong></p>
+<p>std::move实现如下</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> *  @brief  Convert a value to an rvalue.</span></span><br><span class="line"><span class="comment"> *  @param  __t  A thing of arbitrary type.</span></span><br><span class="line"><span class="comment"> *  @return The parameter cast to an rvalue-reference to allow moving it.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Tp&gt;</span><br><span class="line">  <span class="keyword">constexpr</span> <span class="keyword">typename</span> <span class="built_in">std</span>::remove_reference&lt;_Tp&gt;::type&amp;&amp;</span><br><span class="line">  move(_Tp&amp;&amp; <span class="keyword">__t</span>) <span class="keyword">noexcept</span></span><br><span class="line">  &#123; <span class="keyword">return</span> <span class="keyword">static_cast</span>&lt;<span class="keyword">typename</span> <span class="built_in">std</span>::remove_reference&lt;_Tp&gt;::type&amp;&amp;&gt;(<span class="keyword">__t</span>); &#125;</span><br></pre></td></tr></table></figure>
+<p>接着看看std::remove_reference&lt;_Tp&gt;的实现，可以看出，其主要是将去除类型的引用。 对于模板参数T, T&amp;, T&amp;&amp;. 其type类型都为T, <strong>而且T如果有const属性，则type也会保留</strong>.</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// remove_reference</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Tp&gt;</span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">remove_reference</span></span></span><br><span class="line"><span class="class">  &#123;</span> <span class="keyword">typedef</span> _Tp   type; &#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Tp&gt;</span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">remove_reference</span>&lt;_Tp&amp;&gt;</span></span><br><span class="line"><span class="class">  &#123;</span> <span class="keyword">typedef</span> _Tp   type; &#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Tp&gt;</span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">remove_reference</span>&lt;_Tp&amp;&amp;&gt;</span></span><br><span class="line"><span class="class">  &#123;</span> <span class="keyword">typedef</span> _Tp   type; &#125;;</span><br></pre></td></tr></table></figure>
+<p>std::move函数类型为Tp_&amp;&amp;, 一个指向模板类型参数的右值引用， 通过引用折叠，此参数可以与任意类型匹配。</p>
+<p>函数的返回值为std::remove_reference&lt;_Tp&gt;::type&amp;&amp;，std::remove_reference&lt;<em>Tp&gt;::type类型为Tp, 因此，返回类型Tp</em>&amp;&amp;.</p>
+<p>以下分析根据具体事例分析。（实例来自《C++primer fifth》  16.2.6 理解std::move）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sting s1(&quot;hi!&quot;), s2;</span><br><span class="line">s2 = std::move(string(&quot;bye!&quot;));  // 传入一个右值</span><br><span class="line">s2 = std::move(s1);              // 传入一个左值</span><br></pre></td></tr></table></figure>
+<p>在s2 = std::move(string(“bye!”));   传入的是一个右值。因此，在std::move模板函数中，</p>
+<ul>
+<li>推断出的T类型为string</li>
+<li>因此， std::remove_reference用string进行实例化</li>
+<li>std::remove_reference的type成员是string</li>
+<li>move的返回类型是string&amp;&amp;</li>
+<li>move的参数__t类型为string&amp;&amp;.</li>
+</ul>
+<p>因此std::move最终被实例化如下。 __t类型已经是string&amp;&amp;， 因此类型转换什么都不用做。 即对于传入右值的std::move函数， 实际上move函数什么都不用做。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">string</span>&amp;&amp; <span class="title">move</span><span class="params">(<span class="built_in">string</span>&amp;&amp; <span class="keyword">__t</span>)</span></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">static_cast</span>&lt;<span class="built_in">string</span> &amp;&amp;&gt;(<span class="keyword">__t</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在s2 = std::move(s1);  传入的是一个左值，因此， 在std::move模板函数中， </p>
+<ul>
+<li>推断出T的类型为string&amp; ( string的引用， 而不是普通的string, 这个是特殊规则)。</li>
+<li>因此，std::remove_reference用string&amp; 进行实例化</li>
+<li>std::remove_reference的type成员是string</li>
+<li>move的返回类型是string&amp;&amp;</li>
+<li>move的参数__t类型为string&amp; &amp;&amp;，  会被折叠为string&amp;.</li>
+</ul>
+<p>因此std::move最终被实例化如下, __t类型是String&amp;，  因此cast将__t类型string&amp;转为string&amp;&amp;. </p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">string</span>&amp;&amp; <span class="title">moe</span><span class="params">(<span class="built_in">string</span>&amp; <span class="keyword">__t</span>)</span></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">static_cast</span>&lt;<span class="built_in">string</span> &amp;&amp;&gt;(<span class="keyword">__t</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过以上分析， 知道std::move, 无论传递左值/右值， 我们都可以获取到一个右值引用。 传递左值的时候，函数会使用cast进行强制转化， 传递右值，则什么都不用做。</p>
+<h1 id="四、std-forward"><a href="#四、std-forward" class="headerlink" title="四、std::forward"></a>四、std::forward</h1><p>首先看看std::forward实现, forward提供两个重载版本， 一个针对左值， 一个针对右值。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> *  @brief  Forward an lvalue.</span></span><br><span class="line"><span class="comment"> *  @return The parameter cast to the specified type.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  This function is used to implement "perfect forwarding".</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Tp&gt;</span><br><span class="line">  <span class="keyword">constexpr</span> _Tp&amp;&amp;</span><br><span class="line">  forward(<span class="keyword">typename</span> <span class="built_in">std</span>::remove_reference&lt;_Tp&gt;::type&amp; <span class="keyword">__t</span>) <span class="keyword">noexcept</span></span><br><span class="line">  &#123; <span class="keyword">return</span> <span class="keyword">static_cast</span>&lt;_Tp&amp;&amp;&gt;(<span class="keyword">__t</span>); &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> *  @brief  Forward an rvalue.</span></span><br><span class="line"><span class="comment"> *  @return The parameter cast to the specified type.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  This function is used to implement "perfect forwarding".</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Tp&gt;</span><br><span class="line">  <span class="keyword">constexpr</span> _Tp&amp;&amp;</span><br><span class="line">  forward(<span class="keyword">typename</span> <span class="built_in">std</span>::remove_reference&lt;_Tp&gt;::type&amp;&amp; <span class="keyword">__t</span>) <span class="keyword">noexcept</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">static_assert</span>(!<span class="built_in">std</span>::is_lvalue_reference&lt;_Tp&gt;::value, <span class="string">"template argument"</span></span><br><span class="line">    <span class="string">" substituting _Tp is an lvalue reference type"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">static_cast</span>&lt;_Tp&amp;&amp;&gt;(<span class="keyword">__t</span>);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>根据以下实例进行分析,  实例来自  <a href="https://www.zhihu.com/question/34544004/answer/59104471" target="_blank" rel="noopener"><font color="#0000FF">知乎</font></a> ，网名<strong>蓝色</strong>的回答。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">(T&amp;&amp; fparam)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">std</span>::forward&lt;T&gt;(fparam);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> i = <span class="number">7</span>;</span><br><span class="line">foo(i);</span><br><span class="line">foo(<span class="number">47</span>);</span><br></pre></td></tr></table></figure>
+<p>在foo(i)， 如果传入的是一个左值， 那么foo中T的类型将是int&amp;,  fparam类型是int&amp; &amp;&amp;, 经过折叠为int&amp;. 因此,在std::forward模板函数中，</p>
+<ul>
+<li>推断出T的类型为int&amp;, </li>
+<li>因此， std::remove_reference用int&amp; 进行实例化</li>
+<li>std::remove_reference的type成员是int</li>
+<li>forward返回类型为int&amp; &amp;&amp;, 折叠为int&amp;</li>
+<li>forward的参数类型__t为int&amp; </li>
+<li>static_cast<int & &&> 折叠为static_cast<int &></int></int></li>
+</ul>
+<p>因此std::forward最终被实例化如下。因此可以发现，函数什么都不用做， 最终的传入forward的左值引用被保留了。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> &amp;<span class="title">forward</span><span class="params">(<span class="keyword">int</span> &amp;<span class="keyword">__t</span>)</span></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">static_cast</span>&lt;<span class="keyword">int</span> &amp;&gt;(<span class="keyword">__t</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在foo(47)中， 传入的是一个右值，那么foo中T的类型将是int,  fparam类型是T&amp;&amp;, 因此，在std::forward模板函数中</p>
+<ul>
+<li>推断出T的类型为int</li>
+<li>因此， std::remove_reference用int 进行实例化</li>
+<li>std::remove_reference的type成员是int</li>
+<li>forward返回类型为int&amp;&amp;</li>
+<li>forward的参数类型__t为int&amp;&amp;</li>
+<li>static_cast<int &&></int></li>
+</ul>
+<p>因此std::forward最终被实例化如下。因此可以发现，函数什么都不用做， 最终的传入forward的右值引用被保留了。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> &amp;&amp;<span class="title">forward</span><span class="params">(<span class="keyword">int</span> &amp;&amp;<span class="keyword">__t</span>)</span></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">static_cast</span>&lt;<span class="keyword">int</span> &amp;&amp;&gt;(<span class="keyword">__t</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过以上分析， 实际上无论传递左值还是右值， forward都可以完美转发， 并且函数内部什么都不用做（转发的属性还包括const， 尽管例子没有体现出来。）</p>
+<h1 id="五、参考"><a href="#五、参考" class="headerlink" title="五、参考"></a>五、参考</h1><ul>
+<li>C++primer fifth》  16.2.6 理解std::move</li>
+<li><a href="https://www.zhihu.com/question/34544004/answer/59104471" target="_blank" rel="noopener"><font color="#0000FF">std::move(expr)和std::forward(expr)参数推导的疑问?</font></a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/std-move/" rel="tag"># std::move</a>
+          
+            <a href="/tags/std-forward/" rel="tag"># std::forward</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/04/26/用普通mutex替换读写锁的一个例子/" rel="next" title="用普通mutex替换读写锁的一个例子">
+                <i class="fa fa-chevron-left"></i> 用普通mutex替换读写锁的一个例子
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/12/28/基于p2p下载项目整理/" rel="prev" title="基于p2p下载项目整理">
+                基于p2p下载项目整理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#一、左值和右值"><span class="nav-text">一、左值和右值</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、左值引用和右值引用"><span class="nav-text">二、左值引用和右值引用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、std-move"><span class="nav-text">三、std::move</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、std-forward"><span class="nav-text">四、std::forward</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#五、参考"><span class="nav-text">五、参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

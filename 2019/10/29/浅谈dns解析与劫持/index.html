@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="dns劫持,http劫持,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言 最近在移动端中，处理有关于http/https请求中dns被劫持问题。 本文打算对其中涉及的技术做简要梳理， 包括dns域名解析原理， dns劫持以及应对方案（目前使用httpdns解决方案）。  一、dns解析（1）什么是dnsDNS(Domain Name System   域名解析系统)，将给定的域名解析为具体的IP地址。 在互联网上每个机器都是使用IP地址进行通信的， 由于IP地址是">
+<meta name="keywords" content="dns劫持,http劫持">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈dns解析与劫持">
+<meta property="og:url" content="http://yoursite.com/2019/10/29/浅谈dns解析与劫持/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言 最近在移动端中，处理有关于http/https请求中dns被劫持问题。 本文打算对其中涉及的技术做简要梳理， 包括dns域名解析原理， dns劫持以及应对方案（目前使用httpdns解决方案）。  一、dns解析（1）什么是dnsDNS(Domain Name System   域名解析系统)，将给定的域名解析为具体的IP地址。 在互联网上每个机器都是使用IP地址进行通信的， 由于IP地址是">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2019/10/29/浅谈dns解析与劫持/图1-1dns工作原理.png">
+<meta property="og:image" content="http://yoursite.com/2019/10/29/浅谈dns解析与劫持/图2-1dns被劫持.png">
+<meta property="og:image" content="http://yoursite.com/2019/10/29/浅谈dns解析与劫持/浅谈dns解析与劫持/图3-1http劫持.png">
+<meta property="og:image" content="http://yoursite.com/2019/10/29/浅谈dns解析与劫持/浅谈dns解析与劫持/图4-1httpdns.jpg">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.507Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈dns解析与劫持">
+<meta name="twitter:description" content="前言 最近在移动端中，处理有关于http/https请求中dns被劫持问题。 本文打算对其中涉及的技术做简要梳理， 包括dns域名解析原理， dns劫持以及应对方案（目前使用httpdns解决方案）。  一、dns解析（1）什么是dnsDNS(Domain Name System   域名解析系统)，将给定的域名解析为具体的IP地址。 在互联网上每个机器都是使用IP地址进行通信的， 由于IP地址是">
+<meta name="twitter:image" content="http://yoursite.com/2019/10/29/浅谈dns解析与劫持/图1-1dns工作原理.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/10/29/浅谈dns解析与劫持/">
+
+
+
+
+
+  <title>浅谈dns解析与劫持 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/10/29/浅谈dns解析与劫持/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">浅谈dns解析与劫持</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-10-29T10:53:11+08:00">
+                2019-10-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/dns/" itemprop="url" rel="index">
+                    <span itemprop="name">dns</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><blockquote>
+<p>最近在移动端中，处理有关于http/https请求中dns被劫持问题。 本文打算对其中涉及的技术做简要梳理， 包括dns域名解析原理， dns劫持以及应对方案（目前使用httpdns解决方案）。</p>
+</blockquote>
+<h1 id="一、dns解析"><a href="#一、dns解析" class="headerlink" title="一、dns解析"></a>一、dns解析</h1><h2 id="（1）什么是dns"><a href="#（1）什么是dns" class="headerlink" title="（1）什么是dns"></a>（1）什么是dns</h2><p><strong>DNS(Domain Name System   域名解析系统)</strong>，将给定的域名解析为具体的IP地址。 在互联网上每个机器都是使用IP地址进行通信的， 由于IP地址是一串数字，不方便记忆，因此人们希望使用一串便以记忆的字符串代替IP， 这串字符就是IP对应的名字，简称域名。而使用域名访问的时候，需要借助dns（域名解析系统），将域名解析为具体的IP， 我们就可以跟这个IP通信。举例， 当我们访问谷歌时，在网页是以<strong>google.com</strong>域名搜索, 其实我们是跟<strong>93.46.8.90</strong>通信（比如dns将google.com解析为93.46.8.90）, 显然记住google.com比93.46.8.90方便。</p>
+<h2 id="（2）dns工作原理"><a href="#（2）dns工作原理" class="headerlink" title="（2）dns工作原理"></a>（2）dns工作原理</h2><p><img src="/2019/10/29/浅谈dns解析与劫持/图1-1dns工作原理.png" alt="图1-1"></p>
+<p>dns工作流程如上图所示，演示了访问一个uri经过dns解析全过程。（当中忽略了dns应用缓存，本地host文件）。当中只要找到对应域名记录，则返回结果并停止往下访问。</p>
+<p>（1）第一步，应该判断一下dns应用缓存是否有域名<strong>download.beta.example.com</strong>的IP，如果有直接返回。（对于浏览器来说可以开启禁用缓存， 那么将直接跳过这一步）</p>
+<p>（2）第二步，获取本地hosts文件，判断是否有域名<strong>download.beta.example.com</strong>的记录，如果有直接返回。（windows hosts文件默认保存在:C:\Windows\System32\Drivers\etc\hosts,  在linux上hosts文件位于/etc/hosts)。</p>
+<p>（3）第三步，将域名发送到本地dns服务器，如果本地dns缓存有域名<strong>download.beta.example.com</strong>的记录，直接返回。对应上图步骤1.</p>
+<p>（4）第四步，将域名<strong>download.beta.example.com</strong>发送到根服务器(<strong>Root Server</strong>)，<strong>Root Server</strong>维护顶级域名服务器（eg, .com, .cn, .org等 全球13个), 识别到该顶级域名为<strong>com</strong>, 将<strong>com</strong>域名服务器地址IP返回，并告诉请求者，他不知道域名地址，但是<strong>com</strong>域名服务器知道，你可以去找它。对应步骤2, 3</p>
+<p>（5）第五步，将域名<strong>download.beta.example.com</strong>发送到<strong>com</strong>域名服务器，<strong>com</strong>域名服务器它不知道该域名地址，但是它知道<strong>example.com</strong>域名服务器地址，于是返回将<strong>example.com</strong>地址返回并告诉请求者，你可以去哪里找它。对应步骤4,5</p>
+<p>（6）第六步，将域名<strong>download.beta.example.com</strong>发送到<strong>example.com</strong>域名服务器, <strong>example.com</strong>服务器它不知道该域名地址，但是它知道<strong>beta.example.com</strong>域名服务器地址，于是返回将<strong>beta.example.com</strong>地址返回并告诉请求者，你可以去哪里找它。对应步骤 6,7</p>
+<p>（7）第七步，将域名<strong>download.beta.example.com</strong>发送到<strong>beta.example.com</strong>域名服务器,  <strong>beta.example.com</strong>服务器如果知道该域名地址，将返回<strong>download.beta.example.com</strong>地址并且将结果缓存到本地dns中, 如果不知道， 那么将中止继续递归访问。对应步骤8,9</p>
+<p>（8）第八步，将解析结果返回给用户， 整个dns解析结束。对应步骤10.</p>
+<h2 id="（3）http请求"><a href="#（3）http请求" class="headerlink" title="（3）http请求"></a>（3）http请求</h2><ol>
+<li>首先将http请求uri中的host发起域名解析。</li>
+<li>将域名解析结果IP地址，在互联网上发起http请求。（eg, get/post）</li>
+<li>对应的http服务器将http请求结果返回给用户。</li>
+</ol>
+<h1 id="二、dns劫持"><a href="#二、dns劫持" class="headerlink" title="二、dns劫持"></a>二、dns劫持</h1><p><strong>dns劫持也称域名劫持</strong>。 即当我们向dns发起域名解析的请求， 结果这个请求被劫持，劫持之后可能不响应我们的请求，更多的是给予我们错误的IP地址，将我们导向其他服务器，从而可以窃取我们的信息，甚至盗用我们的财务。当我们浏览网页时，如果dns被劫持，可能访问到意想不到的网页。如下图所示。</p>
+<p>ps：dns劫持其实并不是真的“黑掉”了我们的想访问的目标网站，而是冒名顶替、招摇撞骗罢了。</p>
+<p><img src="/2019/10/29/浅谈dns解析与劫持/图2-1dns被劫持.png" alt="图2-1"></p>
+<p>因此，dns解析被劫持，我们如何判断以及处理。</p>
+<p>（1）当我们发起域名解析请求时，在本地hosts文件以及本地缓存没有找到对应的记录，我们就需要向外网发起域名解析请求，如果这时候被劫持，假如劫持之后没有返回解析IP给我们，那我们域名解析的接口会调用失败，这时候我们可以尝试调用几次，如果都失败，我们可以停下来分析，是否域名写错等等（如果有多个域名，程序可以自动切换其他域名解析尝试）</p>
+<p>（2）如果劫持之后返回无效的IP， 那么会导致我们无法连接上，最终在程序可以通过连接超时发现问题。（如果有多个域名，程序可以自动切换其他域名解析尝试）</p>
+<p>（3）如果劫持之后返回可以连接的IP，当我们成功连接此IP并且发送http请求，对方也响应此请求。那么我们应当如何辨别此响应是来自被劫持之后的服务器，而不是我们自己的服务器呢？ （类似上图，用户访问建设银行服务器，由于被劫持，访问到了假的建设银行服务器，此时我们辨别此服务器真假呢？ ）  比如我们可以让http头部携带多一个字段，用于鉴定此响应是否来自我们目标服务器。 对于每一个http请求的资源， 目标服务器拥有对应资源的唯一标识。并且服务器在响应客户端的请求时候，都会带上这个标识。 由于其他服务器没有我们请求资源的标志字段，因此，我们就可以通过判断http响应请求是否正确包含此字段，从而可以鉴别此服务器的真伪。 （如果有多个域名，程序可以自动切换其他域名解析尝试）</p>
+<p><strong>谁会劫持我们 ？ </strong></p>
+<p>（1）运营商:  运营商主要是为了盈利，对我们访问的网页插入一些广告，让人烦厌的广告。</p>
+<p>（2）gwf： 中国防火墙（Great Firewall of China）,主要是劫持我们访问国外的网页。dns服务器解析出口要经过政府管辖的服务器（主要在北京，广州，上海），如果发现是解析国外的dns，那么会返回给我们无效的IP地址，让我们无法访问。</p>
+<p>（3）其他第三方（主要是黑客）：大部分也是为了获取一己私利，不过这个会比运营商更狠，经常会窃取我们的信息，包括我们的支付信息从而盗取我们的钱财。</p>
+<h1 id="三、http劫持"><a href="#三、http劫持" class="headerlink" title="三、http劫持"></a>三、http劫持</h1><p>http劫持主要是http内容的劫持，如下图所示， 即纂改了http请求响应的状态码，http头部信息，或者消息内容。</p>
+<p><img src="./浅谈dns解析与劫持/图3-1http劫持.png" alt="图3-1"></p>
+<p>  http请求是在dns域名解析之后，拿到具体的IP，再发起http请求。</p>
+<p>（1） 如果此http请求被劫持，劫持之后没有给我们应答，那么我们同样可以通过请求超时发现问题。</p>
+<p>（2） 如果此http请求被劫持之后，虚假的服务器响应应答，那么我们也可以通过判断响应是否携带资源请求的唯一标识，来判断服务器的真伪。</p>
+<p>（3） 如果http请求得到了目标服务器的真实响应，但是这个响应在返回过程被劫持了，而且被纂改信息， 程序基本就没法判断响应信息是否被修改过了（http头部资源唯一标识没有被修改）, 这样基本无解了。 为了避免这种情况，尽量使用https代替http。 如上图情况所描述。</p>
+<h1 id="四、httpdns解决方案"><a href="#四、httpdns解决方案" class="headerlink" title="四、httpdns解决方案"></a>四、httpdns解决方案</h1><p>传统使用dns服务器解析域名，即将要解析的域名向运营商的dns服务器发起解析的请求（本质发送udp报文）。 httpdns是基于http协议的域名解析服务， 我们使用的是腾讯提供的httpdns服务，即将要解析的域名以http协议发送到腾讯服务器，腾讯再使用权威的dns服务器查询域名，然后将查询结果返回。如下图所示，从而使我们绕过了本地dns解析造成的域名劫持问题。（至于腾讯dns解析为什么不会被劫持，可能腾讯可以绕过运营商dns服务器的解析吧 ， 或者以其他手段避免dns解析被劫持，能够确保将正确解析结果返回给我们），如下图所示。</p>
+<p><img src="./浅谈dns解析与劫持/图4-1httpdns.jpg" alt="图4-1"></p>
+<p>具体详细信息可以参考腾讯官方提供的文档： <a href="https://cloud.tencent.com/document/product/379/3519#httpdns.E5.AE.9E.E7.8E.B0.E7.9A.84.E5.8E.9F.E7.90.86.3F" target="_blank" rel="noopener">httpdns 腾讯官方文档</a></p>
+<h1 id="五、小结"><a href="#五、小结" class="headerlink" title="五、小结"></a>五、小结</h1><p> 本章主要在阅读了一些博客有关dns相关文章基础上，再根据自己的理解，加以整理。 其中阅读到关于使用httpdns遇到问题细节，收益良多，此文<a href="https://cloud.tencent.com/developer/article/1197474" target="_blank" rel="noopener">《黑客技术？没你想象的那么难！——dns劫持篇》</a></p>
+<p>另外，文中关于dns劫持的插图，使用draw.io完成的在线作图，感觉这个挺好用。</p>
+<h1 id="六、参考"><a href="#六、参考" class="headerlink" title="六、参考"></a>六、参考</h1><p>（1）<a href="https://cloud.tencent.com/developer/article/1197474" target="_blank" rel="noopener">黑客技术？没你想象的那么难！——dns劫持篇</a><br>（2）<a href="https://juejin.im/post/59ba146c6fb9a00a4636d8b6" target="_blank" rel="noopener">深入理解Http请求、DNS劫持与解析</a><br>（3）<a href="https://cloud.tencent.com/document/product/379/3519#httpdns.E5.AE.9E.E7.8E.B0.E7.9A.84.E5.8E.9F.E7.90.86.3F" target="_blank" rel="noopener">腾讯httpdns文档</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/dns劫持/" rel="tag"># dns劫持</a>
+          
+            <a href="/tags/http劫持/" rel="tag"># http劫持</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/05/使用代理服务器charles模拟http中关于uri劫持/" rel="next" title="使用代理服务器charles模拟http中关于uri劫持">
+                <i class="fa fa-chevron-left"></i> 使用代理服务器charles模拟http中关于uri劫持
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/11/11/Linux关于select中FD_相关宏实现/" rel="prev" title="Linux关于select中FD_相关宏实现">
+                Linux关于select中FD_相关宏实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#一、dns解析"><span class="nav-text">一、dns解析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#（1）什么是dns"><span class="nav-text">（1）什么是dns</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#（2）dns工作原理"><span class="nav-text">（2）dns工作原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#（3）http请求"><span class="nav-text">（3）http请求</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、dns劫持"><span class="nav-text">二、dns劫持</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、http劫持"><span class="nav-text">三、http劫持</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、httpdns解决方案"><span class="nav-text">四、httpdns解决方案</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#五、小结"><span class="nav-text">五、小结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#六、参考"><span class="nav-text">六、参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

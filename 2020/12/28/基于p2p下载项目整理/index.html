@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="bt,p2p,下载,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言我们的游戏盒平台，几乎聚集了国内所有的移动端手机游戏，用户可以在该平台上方便的下载游戏。为了加快用户的下载速度， 我们会部署很多cdn节点， 而cdn节点流量费用是非常昂贵的。 我们思考能否通过节约流量，从而节省费用开销，因此尝试做p2p共享下载，此项目应运而生。 1. p2p下载简述传统下载，一般是由服务器把文件传送到客户端，例如使用FTP,HTTP等等。 我们使用HTTP协议，客户端从服务">
+<meta name="keywords" content="bt,p2p,下载">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于p2p下载项目整理">
+<meta property="og:url" content="http://yoursite.com/2020/12/28/基于p2p下载项目整理/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言我们的游戏盒平台，几乎聚集了国内所有的移动端手机游戏，用户可以在该平台上方便的下载游戏。为了加快用户的下载速度， 我们会部署很多cdn节点， 而cdn节点流量费用是非常昂贵的。 我们思考能否通过节约流量，从而节省费用开销，因此尝试做p2p共享下载，此项目应运而生。 1. p2p下载简述传统下载，一般是由服务器把文件传送到客户端，例如使用FTP,HTTP等等。 我们使用HTTP协议，客户端从服务">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2020/12/28/基于p2p下载项目整理/图2-1下载流程图.png">
+<meta property="og:image" content="http://yoursite.com/2020/12/28/基于p2p下载项目整理/图4-1p2p穿透统计.png">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.495Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基于p2p下载项目整理">
+<meta name="twitter:description" content="前言我们的游戏盒平台，几乎聚集了国内所有的移动端手机游戏，用户可以在该平台上方便的下载游戏。为了加快用户的下载速度， 我们会部署很多cdn节点， 而cdn节点流量费用是非常昂贵的。 我们思考能否通过节约流量，从而节省费用开销，因此尝试做p2p共享下载，此项目应运而生。 1. p2p下载简述传统下载，一般是由服务器把文件传送到客户端，例如使用FTP,HTTP等等。 我们使用HTTP协议，客户端从服务">
+<meta name="twitter:image" content="http://yoursite.com/2020/12/28/基于p2p下载项目整理/图2-1下载流程图.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/12/28/基于p2p下载项目整理/">
+
+
+
+
+
+  <title>基于p2p下载项目整理 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/12/28/基于p2p下载项目整理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">基于p2p下载项目整理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2020-12-28T23:38:41+08:00">
+                2020-12-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/p2p/" itemprop="url" rel="index">
+                    <span itemprop="name">p2p</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>我们的游戏盒平台，几乎聚集了国内所有的移动端手机游戏，用户可以在该平台上方便的下载游戏。为了加快用户的下载速度， 我们会部署很多cdn节点， 而cdn节点流量费用是非常昂贵的。 我们思考能否通过节约流量，从而节省费用开销，因此尝试做p2p共享下载，此项目应运而生。</p>
+<h1 id="1-p2p下载简述"><a href="#1-p2p下载简述" class="headerlink" title="1. p2p下载简述"></a>1. p2p下载简述</h1><p>传统下载，一般是由服务器把文件传送到客户端，例如使用FTP,HTTP等等。 我们使用HTTP协议，客户端从服务器或者cdn节点(如果有部署cdn节点的话)获取数据。</p>
+<p>基于p2p下载， 主要是使用bt协议(bittorrent)，即种子下载。但我们实际上是<strong>p2sp</strong>(s指的是服务器)下载模式。即http和bt两个渠道同时下载。换句话说, 下载主要还是基于http下载（保证全程有速度)， bt下载作为辅助下载（节约流量），毕竟bt需要有一定用户同时在线，才能发挥作用。而bt下载是从其他用户获取数据，而不用从cdn获取，从而节约了cdn流量。 项目的核心即是bt下载，因为bt下载为了节约流量。</p>
+<p>http和bt如何分工同时下载同一个资源呢？  一个资源可以划分成同等大小的许多片。比如1.5G的王者荣耀游戏， 按照一片1M大小，可以划分为1500片。那么http和bt就可以分别下载这1500片的数据， 每个片下载完成将其写入到同一个文件即可（使用不同的文件描述符，每个片写入的位置都不同， 因此文件也不会错乱），两种渠道同事不断获取未下载的片，将其下载写入到文件，直到整个文件的片都下载完成为止。</p>
+<p>项目是跨平台的，但是主要应用在android移动端，也可以部署在linux/windows上， 放在这两个平台可以做种预热。</p>
+<h1 id="2-下载流程图"><a href="#2-下载流程图" class="headerlink" title="2.下载流程图"></a>2.下载流程图</h1><p><img src="/2020/12/28/基于p2p下载项目整理/图2-1下载流程图.png" alt="图2-1"></p>
+<h1 id="3-http下载"><a href="#3-http下载" class="headerlink" title="3. http下载"></a>3. http下载</h1><p>基于libuv的事件机制，一个线程负责http head请求以及资源的处理， 另外两个线程负责实际上数据的下载。</p>
+<p>具体参考：<a href="https://note.youdao.com/ynoteshare1/index.html?id=78b15799968f9414b9d428b2f363fca7&amp;type=note" target="_blank" rel="noopener"><font color="#0000FF">p2p中http大致实现</font></a></p>
+<h1 id="4-bt下载"><a href="#4-bt下载" class="headerlink" title="4. bt下载"></a>4. bt下载</h1><p><strong>bt(bittorrent)</strong>是一种互联网的p2p传输协议, 用户之间的通信，不需要服务器参与。而且，用户越多传输越快。</p>
+<p><strong>bittorent</strong>下载流程大致如下：</p>
+<ul>
+<li>首先解析torrent种子文件获取tracker地址等信息</li>
+<li>获取其他peer,   主要通过连接tracker服务器，获取其他下载者地址(每一个下载者都视为一个peer)</li>
+<li>连接对方peer， 双方分别告知对方，自己已经拥有的块piece, 然后交换彼此的piece</li>
+</ul>
+<p>百度百科：<a href="https://baike.baidu.com/item/BT%E4%B8%8B%E8%BD%BD" target="_blank" rel="noopener"><font color="#0000FF">bt下载</font></a></p>
+<p>维基百科：<a href="https://zh.wikipedia.org/zh-hans/BitTorrent_(%E5%8D%8F%E8%AE%AE" target="_blank" rel="noopener"><font color="#0000FF">BitTorrent (协议)</font></a>)</p>
+<h2 id="4-1-torrent种子文件"><a href="#4-1-torrent种子文件" class="headerlink" title="4.1 torrent种子文件"></a>4.1 torrent种子文件</h2><p>torrent文件是一个文本文件，记录了资源对应的信息， 比如资源大小，tracker服务器等等。</p>
+<p>参考：<a href="https://note.youdao.com/ynoteshare1/index.html?id=6549969121d3af417535335668c806bf&amp;type=note" target="_blank" rel="noopener"><font color="#0000FF">Bt种子基本知识</font></a></p>
+<h2 id="4-2-获取peer方法"><a href="#4-2-获取peer方法" class="headerlink" title="4.2 获取peer方法"></a>4.2 获取peer方法</h2><p>在bt（bittorrent）软件中，寻找节点信息（peer）是一项非常重要的工作，只有寻找到足够多peer，才能更好发挥出p2p网络优势，从而提高bt下载速度。获取节点信息主要通过<strong>DHT(Distributed Hash Table）, Tracker服务器, lpd（Local Peer Discovery）</strong>方式。</p>
+<ul>
+<li><strong>DHT(Distributed Hash Table)</strong>： 称为分布式哈希表，这种方式比较复杂。这部分没有深入了解。</li>
+</ul>
+<blockquote>
+<p>在不需要服务器的情况下，每个客户端负责一个小范围的<a href="https://zh.wikipedia.org/wiki/路由" target="_blank" rel="noopener">路由</a>，并负责存储一小部分数据，从而实现整个DHT网络的寻址和存储</p>
+</blockquote>
+<ul>
+<li><p><strong>Tracker服务器</strong>： 通过torrent文件中tracker url连接tracker服务器， 登记自己peer信息，并且获取其他peer信息</p>
+</li>
+<li><p><strong>lpd(Local Peer Discovery)</strong>： 基于udp多播的本地发现协议。具体参考另外一篇文章：<a href="https://andycong.top/2019/01/14/%E6%B5%85%E8%B0%88bt%E4%B8%AD%E7%9A%84lpd%E5%8D%8F%E8%AE%AE%E4%BB%A5%E5%8F%8A%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0/#more" target="_blank" rel="noopener"><font color="#0000FF">浅谈bt中的lpd协议以及源码实现</font></a></p>
+</li>
+</ul>
+<h2 id="4-3-p2p穿透"><a href="#4-3-p2p穿透" class="headerlink" title="4.3 p2p穿透"></a>4.3 p2p穿透</h2><p>由于IPV4受限，很多用户共享同一个NAT设备，不同NAT设备之下的用户是无法直接通信， 因此需要某种技术使之可以通信， 即是<strong>p2p穿透</strong></p>
+<p>p2p穿透可以说是p2p技术的核心，而p2p又是bt协议的核心。因此p2p穿透在整个项目是一个非常核心的技术。</p>
+<p>参考《P2P技术详解》系列文章(<strong>强烈推荐</strong>)： <a href="http://www.52im.net/thread-50-1-1.html" target="_blank" rel="noopener"><font color="#0000FF">《P2P技术详解》系列文章</font></a></p>
+<p>P2P原理以及如何实现（自己整理）：<a href="https://blog.csdn.net/qq_33850438/article/details/79700133" target="_blank" rel="noopener"><font color="#0000FF">P2P原理以及如何实现</font></a></p>
+<p>p2p穿透概率(即用户和用户连接成功概率), 也受到各种网络类型的影响， 据我们在移动端调查，结果如下</p>
+<p><img src="/2020/12/28/基于p2p下载项目整理/图4-1p2p穿透统计.png" alt="图4-1"></p>
+<h1 id="5-项目成果"><a href="#5-项目成果" class="headerlink" title="5.项目成果"></a>5.项目成果</h1><p>项目大致可以节约10%的数据流量，从而每年为公司节省 10%的流量费用。</p>
+<p>另外，p2p混合下载与传统http对比，速度稍微慢了一些，影响不大。</p>
+<p>也说明事情往往有两面性。</p>
+<h1 id="6-项目限制和优化"><a href="#6-项目限制和优化" class="headerlink" title="6.项目限制和优化"></a>6.项目限制和优化</h1><p>尽管项目尽力做到最好， 但是也有一些不足以及限制， 大致如下几点。</p>
+<h2 id="限制"><a href="#限制" class="headerlink" title="限制"></a>限制</h2><ol>
+<li><p>只有用户在wifi环境下，才会启动p2p下载，不然走传统的http服务器下载。（主要是考虑到不窃取用户的数量）</p>
+</li>
+<li><p>用户只有在下载的过程中分享，用户下载完成，删除对应的资源文件(android上资源安装包apk)，停止分享。考虑到下载完成驻留apk文件，影响用户，导致做种分享的时间非常短暂。(<strong>这是非常致命的点</strong>) ，或者后续可以选择下载完成，驻留一小部分数据继续分享给其他用户， 增加数据分享。</p>
+</li>
+<li><p>受限的用户的上传带宽， 普通用户的带宽的上行速度大约是下行速度的1/8. 也就是用户下载速度1M/s, 分享上传速度125K/s。换言之，也就是说用户下载速度，受到其他用户上传速度限制。</p>
+</li>
+<li><p>我们目前只对非对称(none sysmmetric cone nat))的网络类型进行穿透，而对称类型 (sysmmetric cone nat) 这部分目前穿透比较困难，我们暂时没有实现， 后续可以继续优化。（由上图统计可知，对称网络类型大约占了1/4）。</p>
+</li>
+</ol>
+<h2 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h2><ol>
+<li><strong>提高peer穿透效率：</strong>每个节点，从tracker获取到到的peer列表， 可以直接向整个peer列表各发送一个空的udp消息，这样的目的是让我们的NAT对整个peer列表信任(假如此我们节点位于NAT之后)，后续如果有此peer列表中的peer发送消息到此节点, 大概率情况下，此节点将会直接收到这个消息(如果此节点对这个peer的信任还在保活期)， 那么此节点和该peer将穿透将成功。</li>
+<li><strong>peer节点优先级：</strong>客户端目前从tracker获取到的peer列表，每个peer只有IP, Port字段信息，导致客户端无法对peer的优先级进行排序。 因此，每个peer可以考虑附带其他信息， 比如peer的带宽，peer的地理位置信息(方便客户端优先选择物理距离近的节点)， peer下载资源完成的进度等等。 这样客户端便可以通过对节点优先级的排序，优先连接优质的节点，从而提高下载/分享的效率。</li>
+</ol>
+<h1 id="7-项目小结"><a href="#7-项目小结" class="headerlink" title="7.项目小结"></a>7.项目小结</h1><p>此项目也是几经波折，陆陆续续做了将近两年。</p>
+<p>最开始借鉴开源库aria2，直接在此基础上修改，由于aria2的bt协议是基于tcp的， 而tcp得穿透成功率不如udp，因此在aria2基础上就引入了libutp库(一个基于udp协议可靠库)， 参考了transmission中使用libutp。</p>
+<p>由于aria2是单线程，后面为了充分利用多核性能，在aria2框架基础上，将其扩展为多线程。 </p>
+<p>由于受到了aria2框架限制，修改后多线程版本的aria2不稳定， 经常出bug。因此后面决定重构项目，对整个项目架构重新设计，不管http还是bt底层通讯协议都使用libuv(基于reactor模式)，复用aria2一些基础类，http的实现参考传统游戏盒的实现，bt下载参考aria2的逻辑，这也花了挺长时间。</p>
+<p>目前还说，已经很稳定了。</p>
+<h1 id="8-学习笔记"><a href="#8-学习笔记" class="headerlink" title="8.学习笔记"></a>8.学习笔记</h1><p>做项目的过程中， 也学习了相关的开源库， 并且记录了一些相关笔记。</p>
+<ul>
+<li><a href="http://note.youdao.com/s/dUYwf0rA" target="_blank" rel="noopener"><font color="#0000FF">aria2-笔记整理汇总</font></a></li>
+<li><a href="http://note.youdao.com/s/dMTmkOwc" target="_blank" rel="noopener"><font color="#0000FF">transmission-笔记整理汇总</font></a></li>
+<li><a href="http://note.youdao.com/s/ZEKoOXak" target="_blank" rel="noopener"><font color="#0000FF">libuv-笔记整理汇总</font></a></li>
+</ul>
+<h1 id="9-参考"><a href="#9-参考" class="headerlink" title="9. 参考"></a>9. 参考</h1><ol>
+<li><a href="https://note.youdao.com/ynoteshare1/index.html?id=78b15799968f9414b9d428b2f363fca7&amp;type=note" target="_blank" rel="noopener"><font color="#0000FF">p2p中http大致实现</font></a></li>
+<li><a href="[https://andycong.top/2019/01/14/%E6%B5%85%E8%B0%88bt%E4%B8%AD%E7%9A%84lpd%E5%8D%8F%E8%AE%AE%E4%BB%A5%E5%8F%8A%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0/#more](https://andycong.top/2019/01/14/浅谈bt中的lpd协议以及源码实现/#more"><font color="#0000FF">浅谈bt中的lpd协议以及源码实现</font></a>)</li>
+<li><a href="http://www.52im.net/thread-50-1-1.html" target="_blank" rel="noopener"><font color="#0000FF">《P2P技术详解》系列文章</font></a></li>
+<li><a href="https://blog.csdn.net/qq_33850438/article/details/79700133" target="_blank" rel="noopener"><font color="#0000FF">P2P原理以及如何实现</font></a></li>
+<li><a href="http://note.youdao.com/s/dUYwf0rA" target="_blank" rel="noopener"><font color="#0000FF">aria2-笔记整理汇总</font></a></li>
+<li><a href="http://note.youdao.com/s/dMTmkOwc" target="_blank" rel="noopener"><font color="#0000FF">transmission-笔记整理汇总</font></a></li>
+<li><a href="http://note.youdao.com/s/ZEKoOXak" target="_blank" rel="noopener"><font color="#0000FF">libuv-笔记整理汇总</font></a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/bt/" rel="tag"># bt</a>
+          
+            <a href="/tags/p2p/" rel="tag"># p2p</a>
+          
+            <a href="/tags/下载/" rel="tag"># 下载</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/07/03/浅谈std-move和std-forward原理/" rel="next" title="浅谈std::move和std::forward原理">
+                <i class="fa fa-chevron-left"></i> 浅谈std::move和std::forward原理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/01/31/基于go语言简单的用户管理系统/" rel="prev" title="基于go语言简单的用户管理系统">
+                基于go语言简单的用户管理系统 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-p2p下载简述"><span class="nav-text">1. p2p下载简述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-下载流程图"><span class="nav-text">2.下载流程图</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-http下载"><span class="nav-text">3. http下载</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-bt下载"><span class="nav-text">4. bt下载</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-torrent种子文件"><span class="nav-text">4.1 torrent种子文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-获取peer方法"><span class="nav-text">4.2 获取peer方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-p2p穿透"><span class="nav-text">4.3 p2p穿透</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-项目成果"><span class="nav-text">5.项目成果</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-项目限制和优化"><span class="nav-text">6.项目限制和优化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#限制"><span class="nav-text">限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优化"><span class="nav-text">优化</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-项目小结"><span class="nav-text">7.项目小结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-学习笔记"><span class="nav-text">8.学习笔记</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-参考"><span class="nav-text">9. 参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

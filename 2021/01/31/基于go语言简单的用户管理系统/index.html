@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="rpc,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言此项目主要用于学习go语言，并且了解后台相关开发技术栈，比如rpc，缓存redis，数据库mysql等 项目github地址: p2p中http大致实现 功能需求实现一个用户管理系统，用户可以登录、拉取和编辑他们的profiles。  用户可以通过在Web页面输入username和password登录，backend系统负责校验用户身份。 成功登录后，页面需要展示用户的相关信息；否则页面展示相">
+<meta name="keywords" content="rpc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于go语言简单的用户管理系统">
+<meta property="og:url" content="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/index.html">
+<meta property="og:site_name" content="AndyCong&#39;s Blog">
+<meta property="og:description" content="前言此项目主要用于学习go语言，并且了解后台相关开发技术栈，比如rpc，缓存redis，数据库mysql等 项目github地址: p2p中http大致实现 功能需求实现一个用户管理系统，用户可以登录、拉取和编辑他们的profiles。  用户可以通过在Web页面输入username和password登录，backend系统负责校验用户身份。 成功登录后，页面需要展示用户的相关信息；否则页面展示相">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/diagram1.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/diagram2.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/login.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/login_success.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/updatePicName.jpg">
+<meta property="og:image" content="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/updatePicName_succes.jpg">
+<meta property="og:updated_time" content="2021-01-31T15:43:54.493Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基于go语言简单的用户管理系统">
+<meta name="twitter:description" content="前言此项目主要用于学习go语言，并且了解后台相关开发技术栈，比如rpc，缓存redis，数据库mysql等 项目github地址: p2p中http大致实现 功能需求实现一个用户管理系统，用户可以登录、拉取和编辑他们的profiles。  用户可以通过在Web页面输入username和password登录，backend系统负责校验用户身份。 成功登录后，页面需要展示用户的相关信息；否则页面展示相">
+<meta name="twitter:image" content="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/diagram1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/">
+
+
+
+
+
+  <title>基于go语言简单的用户管理系统 | AndyCong's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AndyCong's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">It is never too old to learn</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/01/31/基于go语言简单的用户管理系统/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="andycong">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AndyCong's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">基于go语言简单的用户管理系统</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2021-01-31T23:43:54+08:00">
+                2021-01-31
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index">
+                    <span itemprop="name">go</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>此项目主要用于学习go语言，并且了解后台相关开发技术栈，比如rpc，缓存redis，数据库mysql等</p>
+<p><strong>项目github地址</strong>: <a href="https://github.com/ggandycong/usermana" target="_blank" rel="noopener"><font color="#0000FF">p2p中http大致实现</font></a></p>
+<h2 id="功能需求"><a href="#功能需求" class="headerlink" title="功能需求"></a>功能需求</h2><p>实现一个用户管理系统，用户可以登录、拉取和编辑他们的profiles。 </p>
+<p>用户可以通过在Web页面输入username和password登录，backend系统负责校验用户身份。</p>
+<p>成功登录后，页面需要展示用户的相关信息；否则页面展示相关错误。</p>
+<p>成功登录后，用户可以编辑以下内容：</p>
+<ol>
+<li><p>上传profile picture</p>
+</li>
+<li><p>修改nickname（需要支持Unicode字符集，utf-8编码）</p>
+</li>
+</ol>
+<p>用户信息包括：</p>
+<ol>
+<li><p>username（不可更改）</p>
+</li>
+<li><p>nickname</p>
+</li>
+<li><p>profile picture</p>
+</li>
+</ol>
+<p>需要提前将初始用户数据插入数据库用于测试。确保测试数据库中包含10,000,000条用户账号信息。</p>
+<h2 id="设计要求"><a href="#设计要求" class="headerlink" title="设计要求"></a>设计要求</h2><ul>
+<li>分别实现HTTP server和TCP server，主要的功能逻辑放在TCP server实现</li>
+<li>Backend鉴权逻辑需要在TCP server实现</li>
+<li>用户账号信息必须存储在MySQL数据库。通过MySQL Go client连接数据库</li>
+<li>使用基于Auth/Session Token的鉴权机制，Token存储在redis，避免使用JWT等加密的形式。</li>
+<li>TCP server需要提供RPC API，RPC机制希望自己设计实现</li>
+<li>Web server不允许直连MySQL、Redis。所有HTTP请求只处理API和用户输入，具体的功能逻辑和数据库操作，需要通过RPC请求TCP server完成</li>
+<li>尽可能使用Go标准库</li>
+<li>安全性</li>
+<li>鲁棒性</li>
+<li>性能</li>
+</ul>
+<h2 id="开发环境"><a href="#开发环境" class="headerlink" title="开发环境"></a>开发环境</h2><ul>
+<li>操作系统：macOS Catalina 10.15.6</li>
+<li>Go:1.15.6</li>
+<li>Mysql: 8.0.22</li>
+<li>Redis: 6.0.10</li>
+</ul>
+<h2 id="设计简介"><a href="#设计简介" class="headerlink" title="设计简介"></a>设计简介</h2><ul>
+<li><p>此项目主要包含三个部分</p>
+<ul>
+<li>用户登陆界面</li>
+<li>http server的服务</li>
+<li>tcp server的服务</li>
+</ul>
+<p>Note:主要是http erver和tcp server模块，其中最重要的是tcp server。</p>
+</li>
+<li><p><strong>HTTP Server</strong>负责处理HTTP请求，对用户数据进行简单处理并转发至TCP服务。</p>
+</li>
+<li><p><strong>TCP Server</strong>处理HTTP服务转发的请求并访问MySQL和redis。</p>
+</li>
+<li><p>http server和tcp server 之间的通信主要是通过rpc协议。</p>
+</li>
+<li><p><strong>rpc</strong>通信协议实现。</p>
+<ul>
+<li>rpc客户端：通过tcp 连接rpc服务器，发送不同的数据信息，从而调用不同的rpc服务。</li>
+<li>rpc服务端：首先注册一些服务(本质服务对应的服务处理函数), 监听请求。 当收到rpc客户端数据时，解析信息调用对应的服务并且将处理完成的结果返回给客户端。</li>
+</ul>
+</li>
+</ul>
+<h2 id="实现流程"><a href="#实现流程" class="headerlink" title="实现流程"></a>实现流程</h2><p><strong>整体流程图</strong></p>
+<p><img src="/2021/01/31/基于go语言简单的用户管理系统/diagram1.jpg" alt="diagram1"></p>
+<p><strong>具体登陆获取信息请求</strong></p>
+<p><img src="/2021/01/31/基于go语言简单的用户管理系统/diagram2.jpg" alt="diagram2"></p>
+<h2 id="API接口"><a href="#API接口" class="headerlink" title="API接口"></a>API接口</h2><h3 id="1-注册接口信息"><a href="#1-注册接口信息" class="headerlink" title="1.注册接口信息"></a>1.注册接口信息</h3><table>
+<thead>
+<tr>
+<th>URL</th>
+<th>方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="http://localhost:1088/signUp" target="_blank" rel="noopener">http://localhost:1088/signUp</a></td>
+<td>POST</td>
+</tr>
+</tbody>
+</table>
+<p><strong>输入参数</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数名</th>
+<th>描述</th>
+<th>可选</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>username</td>
+<td>用户名</td>
+<td>否</td>
+</tr>
+<tr>
+<td>password</td>
+<td>密码</td>
+<td>否</td>
+</tr>
+<tr>
+<td>nickname</td>
+<td>昵称</td>
+<td>是</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-登录接口信息"><a href="#2-登录接口信息" class="headerlink" title="2.登录接口信息"></a>2.登录接口信息</h3><table>
+<thead>
+<tr>
+<th>URL</th>
+<th>方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="http://localhost:1088/login" target="_blank" rel="noopener">http://localhost:1088/login</a></td>
+<td>POST</td>
+</tr>
+</tbody>
+</table>
+<p><strong>输入参数</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数名</th>
+<th>描述</th>
+<th>可选</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>username</td>
+<td>用户名</td>
+<td>否</td>
+</tr>
+<tr>
+<td>password</td>
+<td>密码</td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-获取用户信息接口信息"><a href="#3-获取用户信息接口信息" class="headerlink" title="3.获取用户信息接口信息"></a>3.获取用户信息接口信息</h3><blockquote>
+<p>需要在登录接口之后调用</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>URL</th>
+<th>方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="http://localhost:1088/profile" target="_blank" rel="noopener">http://localhost:1088/profile</a></td>
+<td>GET</td>
+</tr>
+</tbody>
+</table>
+<p><strong>输入参数</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数名</th>
+<th>描述</th>
+<th>可选</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>username</td>
+<td>用户名</td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-更改用户昵称接口信息"><a href="#4-更改用户昵称接口信息" class="headerlink" title="4.更改用户昵称接口信息"></a>4.更改用户昵称接口信息</h3><blockquote>
+<p>需要在登录接口之后调用</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>URL</th>
+<th>方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="http://localhost:1088/updateNickName" target="_blank" rel="noopener">http://localhost:1088/updateNickName</a></td>
+<td>POST</td>
+</tr>
+</tbody>
+</table>
+<p><strong>输入参数</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数名</th>
+<th>描述</th>
+<th>可选</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>username</td>
+<td>用户名</td>
+<td>否</td>
+</tr>
+<tr>
+<td>nickname</td>
+<td>新昵称</td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-更改用户头像接口信息"><a href="#5-更改用户头像接口信息" class="headerlink" title="5.更改用户头像接口信息"></a>5.更改用户头像接口信息</h3><blockquote>
+<p>需要在登录接口之后调用</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>URL</th>
+<th>方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="http://localhost:1088/uploadProfilePic" target="_blank" rel="noopener">http://localhost:1088/uploadProfilePic</a></td>
+<td>POST</td>
+</tr>
+</tbody>
+</table>
+<p><strong>输入参数</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数名</th>
+<th>描述</th>
+<th>可选</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>username</td>
+<td>用户名</td>
+<td>否</td>
+</tr>
+<tr>
+<td>image</td>
+<td>头像图片路径</td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+<h2 id="数据储存"><a href="#数据储存" class="headerlink" title="数据储存"></a>数据储存</h2><h3 id="mysql设计"><a href="#mysql设计" class="headerlink" title="mysql设计"></a>mysql设计</h3><p>主要维护两张表，一张保存用户信息， 一张保存用户登陆信息。</p>
+<p>更详细可以参考<strong>mysql/usermane.sql</strong>文件创建表格sql语句</p>
+<h4 id="用户信息表"><a href="#用户信息表" class="headerlink" title="用户信息表"></a>用户信息表</h4><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Field</th>
+<th>Null</th>
+<th>Key</th>
+<th>Default</th>
+<th>Extra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>bigint</td>
+<td>NO</td>
+<td>PRI</td>
+<td>NULL</td>
+<td>auto_increment</td>
+</tr>
+<tr>
+<td>user_name</td>
+<td>varchar(255)</td>
+<td>NO</td>
+<td>UNI</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>nick_name</td>
+<td>varchar(255)</td>
+<td>NO</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>pic_name</td>
+<td>varchar(255)</td>
+<td>YES</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>note: <strong>pic_name</strong>字段主要用于存储用户头像的路径。</p>
+<h4 id="用户登陆信息表"><a href="#用户登陆信息表" class="headerlink" title="用户登陆信息表"></a>用户登陆信息表</h4><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Field</th>
+<th>Null</th>
+<th>Key</th>
+<th>Default</th>
+<th>Extra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>bigint</td>
+<td>NO</td>
+<td>PRI</td>
+<td>NULL</td>
+<td>auto_increment</td>
+</tr>
+<tr>
+<td>user_name</td>
+<td>varchar(255)</td>
+<td>NO</td>
+<td>UNI</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>password</td>
+<td>varchar(255)</td>
+<td>NO</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="redis设计"><a href="#redis设计" class="headerlink" title="redis设计"></a>redis设计</h3><p>redis缓存数据设计。</p>
+<p>主要是缓冲登陆校验的token和用户信息，其中用户信息键值对中的值，是一个哈希表，表中有三项元素，分表是代表用户信息是否有效，用的的nick_name, 用户的pic_name。</p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>auto_username</td>
+<td>Token</td>
+</tr>
+<tr>
+<td>username</td>
+<td>{ [valid, 1/“”],[nick_name, “”] [pic_name,“”]}</td>
+</tr>
+</tbody>
+</table>
+<h2 id="代码结构"><a href="#代码结构" class="headerlink" title="代码结构"></a>代码结构</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">usermana</span><br><span class="line">├── README.md               //程序文档</span><br><span class="line">├── benchmark               //压力测试文件</span><br><span class="line">├── config                  //配置文件</span><br><span class="line">├── httpServer              //http server</span><br><span class="line">├── <span class="built_in">log</span>                     //日志相关文件	</span><br><span class="line">├── mysql                   //mysql</span><br><span class="line">├── protocol                //主要定义一些通讯的数据结构</span><br><span class="line">├── redis                   //redis相关文件</span><br><span class="line">├── resource                //文档所需要资源</span><br><span class="line">├── rpc                     //rpc实现</span><br><span class="line">├── static                  //用户头像存放路径</span><br><span class="line">├── tcpServer               //tcp server</span><br><span class="line">├── templates               //用户UI相关html</span><br><span class="line">└── utils                   //相关辅助函数</span><br></pre></td></tr></table></figure>
+<h2 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h2><ol>
+<li>在conf/bench_conf配置系统资源</li>
+<li>在redis/config.go配置redis和mysql</li>
+<li>运行TCP server</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> tcpServer</span><br><span class="line">go vet</span><br><span class="line">go build tcpServer.go</span><br><span class="line">./tcpServer</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>运行HTTP server</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> httpServer</span><br><span class="line">go vet</span><br><span class="line">go build httpServer.go</span><br><span class="line">./httpServer</span><br></pre></td></tr></table></figure>
+<h2 id="功能测试"><a href="#功能测试" class="headerlink" title="功能测试"></a>功能测试</h2><p><strong>用户登陆</strong></p>
+<p><img src="/2021/01/31/基于go语言简单的用户管理系统/login.jpg" alt="login"></p>
+<p><strong>用户登陆成功</strong></p>
+<p><img src="/2021/01/31/基于go语言简单的用户管理系统/login_success.jpg" alt="login_success"></p>
+<p><strong>显示用户信息</strong></p>
+<blockquote>
+<p>默认用户图像信息为空</p>
+</blockquote>
+<p><img src="/2021/01/31/基于go语言简单的用户管理系统/updatePicName.jpg" alt="updatePicName"></p>
+<p><strong>修改用户头像路径</strong></p>
+<p><img src="/2021/01/31/基于go语言简单的用户管理系统/updatePicName_succes.jpg" alt="updatePicName_succes"></p>
+<h2 id="单元测试"><a href="#单元测试" class="headerlink" title="单元测试"></a>单元测试</h2><p>简单对redis,mysql,tcpserver接口进行单元测试.</p>
+<p>分别在<strong>redis, mysql, tcpServer</strong>，目录下执行</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go <span class="built_in">test</span></span><br></pre></td></tr></table></figure>
+<p>主要执行<strong>redis/redis_test.go</strong>，<strong>mysql/mysql_test.go</strong>,<strong>tcpServer/tcpServer_test.go</strong>测试文件.</p>
+<h2 id="压力测试"><a href="#压力测试" class="headerlink" title="压力测试"></a>压力测试</h2><h3 id="模拟"><a href="#模拟" class="headerlink" title="模拟"></a>模拟</h3><p>使用程序模拟多用户并发请求，一个协程(goroutine)对应一个用户，并发启动多个协程，即可达到模拟测试目的。</p>
+<p>运行<strong>benchmark/benchmark.go</strong>文件，即可模拟压力测试。</p>
+<h3 id="login"><a href="#login" class="headerlink" title="login:"></a>login:</h3><h4 id="固定用户-200-并发"><a href="#固定用户-200-并发" class="headerlink" title="固定用户 200 并发"></a>固定用户 200 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(200) - Random(false) - Cost(2.785033353s) - QPS(17954/sec)</p>
+</blockquote>
+<h4 id="随机用户-200-并发"><a href="#随机用户-200-并发" class="headerlink" title="随机用户 200 并发"></a>随机用户 200 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(200) - Random(true) - Cost(2.934093639s) - QPS(17042/sec)</p>
+</blockquote>
+<h4 id="固定用户-2000-并发"><a href="#固定用户-2000-并发" class="headerlink" title="固定用户 2000 并发"></a>固定用户 2000 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(2000) - Random(false) - Cost(3.485402234s) - QPS(14346/sec)</p>
+</blockquote>
+<h4 id="随机用户-2000-并发"><a href="#随机用户-2000-并发" class="headerlink" title="随机用户 2000 并发"></a>随机用户 2000 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(2000) - Random(true) - Cost(4.493010268s) - QPS(11129/sec)</p>
+</blockquote>
+<h3 id="profile"><a href="#profile" class="headerlink" title="profile:"></a>profile:</h3><h4 id="固定用户-200-并发-1"><a href="#固定用户-200-并发-1" class="headerlink" title="固定用户 200 并发"></a>固定用户 200 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(200) - Random(false) - Cost(2.492745575s) - QPS(20059/sec)</p>
+</blockquote>
+<h4 id="随机用户-200-并发-1"><a href="#随机用户-200-并发-1" class="headerlink" title="随机用户 200 并发"></a>随机用户 200 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(200) - Random(true) - Cost(4.052824896s) - QPS(12338/sec)</p>
+</blockquote>
+<h4 id="固定用户-2000-并发-1"><a href="#固定用户-2000-并发-1" class="headerlink" title="固定用户 2000 并发"></a>固定用户 2000 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(2000) - Random(false) - Cost(3.070350174s) - QPS(16285/sec)</p>
+</blockquote>
+<h4 id="随机用户-2000-并发-1"><a href="#随机用户-2000-并发-1" class="headerlink" title="随机用户 2000 并发"></a>随机用户 2000 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(2000) - Random(true) - Cost(4.63655562s) - QPS(10784/sec)</p>
+</blockquote>
+<h3 id="updateNickName"><a href="#updateNickName" class="headerlink" title="updateNickName:"></a>updateNickName:</h3><h4 id="固定用户-200-并发-2"><a href="#固定用户-200-并发-2" class="headerlink" title="固定用户 200 并发"></a>固定用户 200 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(200) - Random(false) - Cost(3.166650838s) - QPS(15790/sec)</p>
+</blockquote>
+<h4 id="随机用户-200-并发-2"><a href="#随机用户-200-并发-2" class="headerlink" title="随机用户 200 并发"></a>随机用户 200 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(200) - Random(true) - Cost(3.303067683s) - QPS(15138/sec)</p>
+</blockquote>
+<h4 id="固定用户-2000-并发-2"><a href="#固定用户-2000-并发-2" class="headerlink" title="固定用户 2000 并发"></a>固定用户 2000 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(2000) - Random(false) - Cost(3.834577733s) - QPS(13040/sec)</p>
+</blockquote>
+<h4 id="随机用户-2000-并发-2"><a href="#随机用户-2000-并发-2" class="headerlink" title="随机用户 2000 并发"></a>随机用户 2000 并发</h4><blockquote>
+<p>Total Requests(50000) - Concurrency(2000) - Random(true) - Cost(3.893069542s) - QPS(12844/sec)</p>
+</blockquote>
+<h2 id="问题总结"><a href="#问题总结" class="headerlink" title="问题总结"></a>问题总结</h2><p>这边整理一下遇到的问题，以及需要注意的点。</p>
+<ol>
+<li><p>使用mysql/mysql_test.go去初始化数据库，插入1 000 000条数据，这个过程比较久，我在本机测试，需要90分钟。而<strong>go test</strong>默认最多运行10分钟，当运行大于10分钟，程序自动退出。因此为了顺利完整插入数据，可以设置<strong>timeout</strong>参数，指定go test运行完timeout时间后才退出。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go <span class="built_in">test</span> -timeout=120m</span><br></pre></td></tr></table></figure>
+<p>表示<strong>go test</strong>运行时，直到完成所有测试或者到达120分钟， 程序才会退出。</p>
+</li>
+<li><p>在高并发多连接的情况下，还需要设置相关参数，比如一个进程最多允许打开的连接数，文件描述符等，还有mysql数据库连接池相关参数的设置。</p>
+<ul>
+<li><strong>kern.ipc.somaxconn</strong>：表示内核最多并发连接数。默认为128，推荐在1024-4096之间，数字越大占用内存也越大。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo sysctl -w kern.ipc.somaxconn=2048</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>kern.maxfilesperproc</strong>：每个进程能够同时打开的最大文件数量(根据需要灵活配置)</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo sysctl -w kern.maxfiles=65536</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>kern.maxfiles</strong>:  系统中允许的最多文件数量 （根据需要灵活配置）</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo sysctl -w kern.maxfiles=22288</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>ulimit -n</strong>:  打开的文件描述符(本系统默认2560), 这个设置受到maxfilesperproc和maxfiles的约束，不能大于其中任何一个。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ulimit</span> -n 10000</span><br></pre></td></tr></table></figure>
+<p>Note: 每个控制台都需要独立设置才生效。</p>
+<ul>
+<li><strong>max_connections</strong>：数据库最多连接数， 默认是150。</li>
+</ul>
+<p>通过以下sql语句查看max_connections值。 </p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> <span class="keyword">variables</span> <span class="keyword">like</span> <span class="string">"max_connections"</span>;</span><br></pre></td></tr></table></figure>
+<p>通过一下sql语句可以设置（根据需要灵活配置）</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> max_connections = <span class="number">2000</span>;</span><br></pre></td></tr></table></figure>
+<p>当遇到连接数超过max_connections时候，会报类似如下错误：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">err:&quot;Error 1040: Too many connections&quot;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>mysql数据库初始化一些连接配置</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//设置mysql每个连接的生命周期，默认值0，即连接不关闭一直存在。</span></span><br><span class="line"><span class="comment">//此值的设置应该小于wait_timeout，避免连接因为超时而意外关闭。wait_timeout的默认值28800，8个小时，</span></span><br><span class="line"><span class="comment">//ConnMaxLifetime值推荐为wait_timeout的一半，即14400，4个小时。</span></span><br><span class="line">db.SetConnMaxLifetime(config.ConnMaxLifetime)</span><br><span class="line"><span class="comment">//MaxIdleConns 连接池中最大空闲连接数.</span></span><br><span class="line">db.SetMaxIdleConns(config.MaxIdleConns)</span><br><span class="line"><span class="comment">// MaxOpenConns 同时连接数据库中最多连接数.  MaxIdleConns和MaxOpenConns最好设置一样</span></span><br><span class="line">db.SetMaxOpenConns(config.MaxOpenConns)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>重点是<strong>back_log</strong>参数</p>
+<p>此参数影响mysql server中tcp accept队列中的连接数。 当tcp accetp队列容量超过<strong>back_log</strong>时候，那么mysql server将会丢弃此连接，从而导致tcp 协议栈回应一个rst包给客户端。(back_log默认值151)</p>
+<p>客户端收到rst之后，表现类似如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">read tcp 127.0.0.1:55718-&gt;127.0.0.1:3306: read: connection reset by peer</span><br></pre></td></tr></table></figure>
+<p>然而，在<strong>go-sql-driver/mysql</strong>中，客户端收到了rst包，还会继续重试maxBadConnRetries(默认2)次连接。</p>
+<p>因此，客户端还是有很大几率连接成功并且完成请求，除非maxBadConnRetries次连接都收到了rst包。</p>
+<p>不过，这对于整体请求来说，响应就变慢了。换言之，QPS会大大减少。</p>
+<p>因此，我们可以修改tcp accetp队列容量，使之比mysql的连接池容量还要大，就可以避免上述问题，从而提高QPS。</p>
+<p>tcp acctpt队列容量除了受到back_log制约，还受到系统参数kern.ipc.somaxconn的制约。</p>
+<p>换言之，tcp acctpt队列容量 = min(back_log,  kern.ipc.somaxconn)。</p>
+<p>back_log参数具体介绍可参考：<a href="https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_back_log" target="_blank" rel="noopener">back_log</a></p>
+<p><strong>back_log</strong>变量通过如下方式查看</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show global variables like &apos;%back_log%&apos;;</span><br></pre></td></tr></table></figure>
+<p>由于back_log是静态变量，因此通过在my.cnf文件修改，如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">back_log = 1000</span><br></pre></td></tr></table></figure>
+<p>Note: 这个主要是排查花了1天多的时间，还是没有找到问题的本质所在，最后是靠<strong>Zhang Weiwei大佬</strong>解决的。</p>
+<p>具体可以参考：<a href="https://confluence.shopee.io/pages/viewpage.action?pageId=375667105" target="_blank" rel="noopener">MySQL出现connection reset by peer问题排查</a></p>
+<p>排查问题的思路也是非常值得学习。</p>
+</li>
+</ol>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>Go: <a href="http://golang.org/" target="_blank" rel="noopener">http://golang.org</a></li>
+<li>Coding style: <a href="https://github.com/golang/go/wiki/CodeReviewComments" target="_blank" rel="noopener">https://github.com/golang/go/wiki/CodeReviewComments</a></li>
+<li>Testing: <a href="https://golang.org/pkg/testing/" target="_blank" rel="noopener">https://golang.org/pkg/testing/</a></li>
+<li>Profiling: <a href="http://blog.golang.org/profiling-go-programs" target="_blank" rel="noopener">http://blog.golang.org/profiling-go-programs</a></li>
+<li>Go Web application example: <a href="https://golang.org/doc/articles/wiki/" target="_blank" rel="noopener">https://golang.org/doc/articles/wiki/</a></li>
+<li>editor/IDE <a href="https://github.com/fatih/vim-go" target="_blank" rel="noopener">https://github.com/fatih/vim-go</a></li>
+<li>MySQL client: <a href="https://github.com/go-sql-driver/mysql" target="_blank" rel="noopener">https://github.com/go-sql-driver/mysql</a></li>
+<li>Redis: <a href="http://redis.io/" target="_blank" rel="noopener">http://redis.io</a></li>
+<li>Redis Client: <a href="https://github.com/go-redis/redis" target="_blank" rel="noopener">https://github.com/go-redis/redis</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/rpc/" rel="tag"># rpc</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/12/28/基于p2p下载项目整理/" rel="next" title="基于p2p下载项目整理">
+                <i class="fa fa-chevron-left"></i> 基于p2p下载项目整理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">andycong</p>
+              <p class="site-description motion-element" itemprop="description">Remember what should be remembered, and forget what should be forgotten.Alter what is changeable, and accept what is mutable</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#功能需求"><span class="nav-text">功能需求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#设计要求"><span class="nav-text">设计要求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#开发环境"><span class="nav-text">开发环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#设计简介"><span class="nav-text">设计简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现流程"><span class="nav-text">实现流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API接口"><span class="nav-text">API接口</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-注册接口信息"><span class="nav-text">1.注册接口信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-登录接口信息"><span class="nav-text">2.登录接口信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-获取用户信息接口信息"><span class="nav-text">3.获取用户信息接口信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-更改用户昵称接口信息"><span class="nav-text">4.更改用户昵称接口信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-更改用户头像接口信息"><span class="nav-text">5.更改用户头像接口信息</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据储存"><span class="nav-text">数据储存</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#mysql设计"><span class="nav-text">mysql设计</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#用户信息表"><span class="nav-text">用户信息表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#用户登陆信息表"><span class="nav-text">用户登陆信息表</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#redis设计"><span class="nav-text">redis设计</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码结构"><span class="nav-text">代码结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#部署"><span class="nav-text">部署</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#功能测试"><span class="nav-text">功能测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#单元测试"><span class="nav-text">单元测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#压力测试"><span class="nav-text">压力测试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#模拟"><span class="nav-text">模拟</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#login"><span class="nav-text">login:</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#固定用户-200-并发"><span class="nav-text">固定用户 200 并发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#随机用户-200-并发"><span class="nav-text">随机用户 200 并发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#固定用户-2000-并发"><span class="nav-text">固定用户 2000 并发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#随机用户-2000-并发"><span class="nav-text">随机用户 2000 并发</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#profile"><span class="nav-text">profile:</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#固定用户-200-并发-1"><span class="nav-text">固定用户 200 并发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#随机用户-200-并发-1"><span class="nav-text">随机用户 200 并发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#固定用户-2000-并发-1"><span class="nav-text">固定用户 2000 并发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#随机用户-2000-并发-1"><span class="nav-text">随机用户 2000 并发</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#updateNickName"><span class="nav-text">updateNickName:</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#固定用户-200-并发-2"><span class="nav-text">固定用户 200 并发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#随机用户-200-并发-2"><span class="nav-text">随机用户 200 并发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#固定用户-2000-并发-2"><span class="nav-text">固定用户 2000 并发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#随机用户-2000-并发-2"><span class="nav-text">随机用户 2000 并发</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题总结"><span class="nav-text">问题总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">andycong</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
