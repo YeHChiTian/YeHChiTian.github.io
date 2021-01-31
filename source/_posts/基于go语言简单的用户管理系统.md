@@ -11,7 +11,7 @@ tags:
 
 此项目主要用于学习go语言，并且了解后台相关开发技术栈，比如rpc，缓存redis，数据库mysql等
 
-**项目github地址**: [<font color="#0000FF">p2p中http大致实现</font>](https://github.com/ggandycong/usermana)
+**项目github地址**: [<font color="#0000FF">usermana</font>](https://github.com/ggandycong/usermana)
 
 ## 功能需求
 
